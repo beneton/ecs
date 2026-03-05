@@ -1,0 +1,53 @@
+﻿using System;
+
+namespace Beneton.ECS.Core
+{
+	public sealed class CommandPool<T> where T : class
+	{
+		private T[] _items;
+		private readonly Func<T> _factory;
+
+		private int _availableCount;
+
+		public CommandPool(Func<T> factory, int initialCapacity = 10)
+		{
+			_items = new T[initialCapacity];
+			_factory = factory;
+			_availableCount = 0;
+		}
+
+		public T Rent()
+		{
+			if (_availableCount == 0)
+			{
+				return _factory();
+			}
+
+			_availableCount--;
+			var item = _items[_availableCount];
+			_items[_availableCount] = null;
+			return item;
+		}
+
+		public void Return(T item)
+		{
+			if (_availableCount == _items.Length)
+			{
+				Expand();
+			}
+
+			_items[_availableCount] = item;
+			_availableCount++;
+		}
+
+		private void Expand()
+		{
+			var newSize = _items.Length * 2;
+			var newArray = new T[newSize];
+
+			Array.Copy(_items, newArray, _items.Length);
+
+			_items = newArray;
+		}
+	}
+}
