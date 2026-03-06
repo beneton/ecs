@@ -39,7 +39,26 @@ namespace Beneton.ECS.Core.Editor
 
 		private void OnGUI()
 		{
-			_isActive = GUILayout.Toggle(_isActive, "Active");
+			EditorGUILayout.BeginHorizontal();
+			{
+				_isActive = GUILayout.Toggle(_isActive, "Active");
+				if (GUILayout.Button("Collapse All"))
+				{
+					foreach (var foldoutsKey in _foldouts.Keys)
+					{
+						_foldouts.Set(foldoutsKey, false);
+					}
+				}
+
+				if (GUILayout.Button("Expand All"))
+				{
+					foreach (var foldoutsKey in _foldouts.Keys)
+					{
+						_foldouts.Set(foldoutsKey, true);
+					}
+				}
+			}
+			EditorGUILayout.EndHorizontal();
 
 			if (!Application.isPlaying)
 			{
