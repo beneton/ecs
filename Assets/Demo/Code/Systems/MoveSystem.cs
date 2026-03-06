@@ -44,10 +44,13 @@ namespace ECSSample.Systems
 					if (hasTravelLog)
 					{
 						travelLog.TotalDistance += travelVector.magnitude;
-						travelLog.DistanceTextField.text = travelLog.TotalDistance.ToString("F0");
-						commandBuffer.UpdateComponent(travelLogEntity, travelLog);
 					}
 				}
+			}
+
+			if (hasTravelLog)
+			{
+				commandBuffer.UpdateComponent(travelLogEntity, travelLog);
 			}
 		}
 	}

@@ -38,6 +38,9 @@ namespace ECSSample
 			_world.AddSystem(new TravelerSpawnerSystem(_travelerPrefab));
 			_world.AddSystem<TravelerDespawner>();
 
+			// UI Update
+			_world.AddSystem<TravelLogUpdateSystem>();
+
 			// Input Cleanup
 			_world.AddSystem<InputCleanerSystem>();
 

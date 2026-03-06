@@ -42,6 +42,18 @@ namespace ECSSample.Components
         public int TypeId => Id;
     }
 
+    public partial struct StartedMoving
+    {
+        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public int TypeId => Id;
+    }
+
+    public partial struct StartedResting
+    {
+        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public int TypeId => Id;
+    }
+
     public partial struct Traveler
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();

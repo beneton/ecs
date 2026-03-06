@@ -4,6 +4,5 @@ namespace ECSSample.Components
 {
 	public partial struct Traveler : IComponent
 	{
-		
 	}
 }

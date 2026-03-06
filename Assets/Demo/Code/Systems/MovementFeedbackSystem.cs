@@ -12,8 +12,8 @@ namespace ECSSample.Systems
 		private readonly Material _restingMaterial;
 		private readonly Material _movingMaterial;
 
-		private Archetype _resting;
-		private Archetype _moving;
+		private Archetype _enteringRest;
+		private Archetype _enteringMove;
 
 		public MovementFeedbackSystem(Material resting, Material moving)
 		{
@@ -23,11 +23,11 @@ namespace ECSSample.Systems
 
 		public override void OnCreate(IArchetypeProvider archetypeProvider)
 		{
-			_resting = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, Resting.Id, ECSMeshRenderers.Id });
+			_enteringRest = archetypeProvider.GetOrCreateArchetype(
+				new[] { StartedResting.Id, ECSMeshRenderers.Id });
 
-			_moving = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, Moving.Id, ECSMeshRenderers.Id });
+			_enteringMove = archetypeProvider.GetOrCreateArchetype(
+				new[] { StartedMoving.Id, ECSMeshRenderers.Id });
 		}
 
 		public override void Update(
@@ -36,7 +36,7 @@ namespace ECSSample.Systems
 			ICommandBuffer commandBuffer,
 			IWorld world)
 		{
-			foreach (var entity in componentManager.GetEntities(_resting))
+			foreach (var entity in componentManager.GetEntities(_enteringRest))
 			{
 				var ecsMeshRenderers = componentManager.GetComponent<ECSMeshRenderers>(entity);
 				foreach (var renderer in ecsMeshRenderers.MeshRenderers)
@@ -45,7 +45,7 @@ namespace ECSSample.Systems
 				}
 			}
 
-			foreach (var entity in componentManager.GetEntities(_moving))
+			foreach (var entity in componentManager.GetEntities(_enteringMove))
 			{
 				var ecsMeshRenderers = componentManager.GetComponent<ECSMeshRenderers>(entity);
 				foreach (var renderer in ecsMeshRenderers.MeshRenderers)
