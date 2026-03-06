@@ -185,9 +185,6 @@ namespace Beneton.ECS.Core
 		{
 			foreach (var pair in _systems.Values)
 			{
-				pair.System.CleanUp(ComponentManager, pair.CommandBuffer);
-				pair.CommandBuffer.Execute(ComponentManager);
-
 				pair.System.Update(deltaTime, ComponentManager, pair.CommandBuffer, this);
 				pair.CommandBuffer.Execute(ComponentManager);
 			}
@@ -197,9 +194,6 @@ namespace Beneton.ECS.Core
 		{
 			foreach (var pair in _lateSystems.Values)
 			{
-				pair.System.CleanUp(ComponentManager, pair.CommandBuffer);
-				pair.CommandBuffer.Execute(ComponentManager);
-
 				pair.System.Update(deltaTime, ComponentManager, pair.CommandBuffer, this);
 				pair.CommandBuffer.Execute(ComponentManager);
 			}
