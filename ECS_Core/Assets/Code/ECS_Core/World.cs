@@ -60,7 +60,7 @@ namespace Beneton.ECS.Core
 			return AddSystem(system, _lateSystems);
 		}
 
-		private T AddSystem<T>(T system, in SparseSet<SystemCommandBufferPair> systemCollection)
+		private T AddSystem<T>(T system, SparseSet<SystemCommandBufferPair> systemCollection)
 			where T : BaseSystem
 		{
 			var pair = new SystemCommandBufferPair
