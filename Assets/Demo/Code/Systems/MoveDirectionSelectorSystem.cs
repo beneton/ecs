@@ -11,22 +11,20 @@ namespace ECSSample.Systems
 	public class MoveDirectionSelectorSystem : BaseSystem
 	{
 		private Archetype _newTravelers;
-		private Archetype _travelers;
+		private Archetype _moving;
 		private Archetype _restingTravelers;
 
 		public override void OnCreate(IArchetypeProvider archetypeProvider)
 		{
 			_newTravelers = archetypeProvider.GetOrCreateArchetype(
 				new[] { Traveler.Id, Movement.Id },
-				new[] { Resting.Id, DirectionCommitment.Id });
+				new[] { Resting.Id, Moving.Id });
 
-			_travelers = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, Movement.Id, DirectionCommitment.Id },
-				new[] { Resting.Id });
+			_moving = archetypeProvider.GetOrCreateArchetype(
+				new[] { Traveler.Id, Movement.Id, Moving.Id });
 
 			_restingTravelers = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, Movement.Id, Resting.Id },
-				new[] { DirectionCommitment.Id });
+				new[] { Traveler.Id, Movement.Id, Resting.Id });
 		}
 
 		public override void Update(
@@ -40,7 +38,7 @@ namespace ECSSample.Systems
 			{
 				commandBuffer.AddComponent(
 					entity,
-					new DirectionCommitment
+					new Moving
 					{
 						Duration = Random.Range(1f, 3f)
 					});
@@ -48,9 +46,9 @@ namespace ECSSample.Systems
 
 			// For travelers that are... hmmm traveling, check if they are still commited to the 
 			// direction. If not, let them rest
-			foreach (var entity in componentManager.GetEntities(_travelers))
+			foreach (var entity in componentManager.GetEntities(_moving))
 			{
-				var commitment = componentManager.GetComponent<DirectionCommitment>(entity);
+				var commitment = componentManager.GetComponent<Moving>(entity);
 				commitment.Duration -= deltaTime;
 				if (commitment.Duration > 0)
 				{
@@ -58,7 +56,7 @@ namespace ECSSample.Systems
 					continue;
 				}
 
-				commandBuffer.RemoveComponent<DirectionCommitment>(entity);
+				commandBuffer.RemoveComponent<Moving>(entity);
 				commandBuffer.AddComponent(
 					entity,
 					new Resting
@@ -82,7 +80,7 @@ namespace ECSSample.Systems
 				commandBuffer.RemoveComponent<Resting>(entity);
 				commandBuffer.AddComponent(
 					entity,
-					new DirectionCommitment
+					new Moving
 					{
 						Duration = Random.Range(1f, 3f)
 					});

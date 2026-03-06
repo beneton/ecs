@@ -27,7 +27,7 @@ namespace ECSSample.Systems
 				new[] { Traveler.Id, Resting.Id, ECSMeshRenderers.Id });
 
 			_moving = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, DirectionCommitment.Id, ECSMeshRenderers.Id });
+				new[] { Traveler.Id, Moving.Id, ECSMeshRenderers.Id });
 		}
 
 		public override void Update(

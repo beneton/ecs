@@ -20,6 +20,8 @@ namespace Beneton.ECS.Core.Editor
 		private ECSDebugRef _ecsDebugRef;
 		private bool _isActive = true;
 
+		private bool _orderByName = false;
+
 		[MenuItem("Debug/Entity Inspector")]
 		public static void ShowWindow()
 		{
@@ -43,7 +45,12 @@ namespace Beneton.ECS.Core.Editor
 
 		private void OnGUI()
 		{
-			_isActive = GUILayout.Toggle(_isActive, "Active");
+			EditorGUILayout.BeginHorizontal();
+			{
+				_isActive = GUILayout.Toggle(_isActive, "Active");
+				_orderByName = GUILayout.Toggle(_orderByName, "Order By Name");
+			}
+			EditorGUILayout.EndHorizontal();
 
 			if (!Application.isPlaying)
 			{
@@ -84,9 +91,14 @@ namespace Beneton.ECS.Core.Editor
 						Name = c.GetType().ToString().Split('.')[^1],
 						Id = c.TypeId.ToString(),
 						Data = EditorJsonUtility.ToJson(c, true)
-					})
-					.OrderBy(c => c.Name)
-					.ToList();
+					});
+			
+			if (_orderByName)
+			{
+				allComponents = allComponents.OrderBy(c => c.Name);
+			}
+
+			allComponents = allComponents.ToList();
 
 			_scrollPosition = GUILayout.BeginScrollView(_scrollPosition);
 			{

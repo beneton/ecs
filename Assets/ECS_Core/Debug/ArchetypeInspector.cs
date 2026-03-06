@@ -14,6 +14,8 @@ namespace Beneton.ECS.Core.Editor
 		// Key is Component.Id
 		private SparseSet<string> _componentNames;
 
+		private SparseSet<bool> _foldouts;
+
 		[MenuItem("Debug/Archetype Inspector")]
 		public static void ShowWindow()
 		{
@@ -44,6 +46,7 @@ namespace Beneton.ECS.Core.Editor
 				EditorGUILayout.LabelField("Only works in play mode");
 				_componentNames = null;
 				_ecsDebugRef = null;
+				_foldouts = null;
 				return;
 			}
 
@@ -53,6 +56,11 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
+			var richTextStyle = new GUIStyle(EditorStyles.label)
+			{
+				richText = true
+			};
+
 			_componentNames ??= DebugUtils.BuildComponentSparseSet();
 			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
 
@@ -60,6 +68,7 @@ namespace Beneton.ECS.Core.Editor
 			var componentManager = _ecsDebugRef.ComponentManager;
 
 			var allArchetypes = componentManager.GetAllArchetypes();
+			_foldouts ??= new SparseSet<bool>();
 
 			_scrollPosition = GUILayout.BeginScrollView(_scrollPosition);
 			{
@@ -73,25 +82,48 @@ namespace Beneton.ECS.Core.Editor
 						.Select(c => _componentNames.Get(c));
 
 					EditorGUILayout.LabelField(
-						$"{archetype.Id.ToString()} (Entity Count: {entitiesInArchetype.Length})",
-						EditorStyles.boldLabel);
-					EditorGUILayout.LabelField(" Required: " + string.Join(',', requiredNames));
-					EditorGUILayout.LabelField(" Excluded: " + string.Join(',', excludedNames));
+						$"<b>Archetype {archetype.Id.ToString()}</b>",
+						richTextStyle);
+					EditorGUILayout.LabelField(
+						" Required: <color=#5CFF5B>" + string.Join(", ", requiredNames) +
+						"</color>",
+						richTextStyle);
+					EditorGUILayout.LabelField(
+						" Excluded: <color=#FF5A6C>" + string.Join(", ", excludedNames) +
+						"</color>",
+						richTextStyle);
 
-					foreach (var entity in entitiesInArchetype)
+					var foldout = _foldouts.TryGet(archetype.Id, out var exists);
+					if (!exists)
 					{
-						if (world.TryGetGameObject(entity, out var go))
+						foldout = true;
+					}
+
+					foldout = EditorGUILayout.BeginFoldoutHeaderGroup(
+						foldout,
+						$"Entity list (Count: {entitiesInArchetype.Length})");
+					{
+						_foldouts.Set(archetype.Id, foldout);
+						if (foldout)
 						{
-							if (GUILayoutHelper.Button(go.name, EditorStyles.miniButton))
+							foreach (var entity in entitiesInArchetype)
 							{
-								Selection.activeGameObject = go;
+								if (world.TryGetGameObject(entity, out var go))
+								{
+									if (GUILayoutHelper.Button(go.name, EditorStyles.miniButton))
+									{
+										Selection.activeGameObject = go;
+									}
+								}
+								else
+								{
+									GUILayoutHelper.Label(entity.ToString(), EditorStyles.label);
+								}
 							}
 						}
-						else
-						{
-							GUILayoutHelper.Label(entity.ToString(), EditorStyles.label);
-						}
 					}
+					EditorGUILayout.EndFoldoutHeaderGroup();
+					EditorGUILayout.Separator();
 				}
 			}
 			GUILayout.EndScrollView();

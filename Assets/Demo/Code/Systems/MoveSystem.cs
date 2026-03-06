@@ -13,7 +13,7 @@ namespace ECSSample.Systems
 		public override void OnCreate(IArchetypeProvider archetypeProvider)
 		{
 			_moving = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, Movement.Id, DirectionCommitment.Id });
+				new[] { Traveler.Id, Movement.Id, Moving.Id });
 		}
 
 		public override void Update(
