@@ -10,11 +10,13 @@ namespace ECSSample.Systems
 	public class TravelerSpawnerSystem : BaseSystem
 	{
 		private Archetype _clicked;
-		private GameObject _travelerPrefab;
+		private readonly GameObject _travelerPrefab;
+		private readonly Transform _travelerContainer;
 
-		public TravelerSpawnerSystem(GameObject prefab)
+		public TravelerSpawnerSystem(GameObject prefab, Transform container)
 		{
 			_travelerPrefab = prefab;
+			_travelerContainer = container;
 		}
 
 		public override void OnCreate(IArchetypeProvider archetypeProvider)
@@ -36,7 +38,7 @@ namespace ECSSample.Systems
 				var button = componentManager.GetComponent<AddTravelerButton>(entity);
 				for (var i = 0; i < button.Amount; i++)
 				{
-					var newTraveler = world.Spawn(_travelerPrefab, null);
+					var newTraveler = world.Spawn(_travelerPrefab, _travelerContainer);
 					newTraveler.GameObject.transform.position =
 						new Vector3(
 							Random.Range(-10f, 10f),

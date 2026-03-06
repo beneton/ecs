@@ -109,12 +109,12 @@ namespace ECSSample.Systems
 				commandBuffer.AddComponent(entity, new StartedMoving());
 
 				var movement = componentManager.GetComponent<Movement>(entity);
-				movement.Direction = new Vector3(
-						Random.Range(-1f, 1f),
-						0,
-						Random.Range(-1f, 1f))
-					.normalized;
+				movement.Direction =
+					new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f))
+						.normalized;
 				commandBuffer.UpdateComponent(entity, movement);
+
+				movement.Transform.LookAt(movement.Transform.position + movement.Direction);
 			}
 		}
 	}

@@ -7,5 +7,7 @@ namespace ECSSample.Components
 	{
 		public float Speed;
 		public Vector3 Direction;
+
+		public Transform Transform;
 	}
 }

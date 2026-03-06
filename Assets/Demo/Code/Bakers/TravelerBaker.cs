@@ -12,13 +12,17 @@ namespace ECSSample.Components
 		{
 			componentManager.AddComponent(entity, new Traveler());
 
+			var moveDirection =
+				new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)).normalized;
+			transform.LookAt(transform.position + moveDirection);
+
 			componentManager.AddComponent(
 				entity,
 				new Movement
 				{
-					Direction = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f))
-						.normalized,
-					Speed = Random.Range(1f, 3f)
+					Direction = moveDirection,
+					Speed = Random.Range(1f, 3f),
+					Transform = transform
 				});
 
 			// A cache to avoid calling GetComponents inside systems

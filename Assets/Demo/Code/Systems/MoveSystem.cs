@@ -29,22 +29,15 @@ namespace ECSSample.Systems
 			foreach (var entity in componentManager.GetEntities(_moving))
 			{
 				var movement = componentManager.GetComponent<Movement>(entity);
+				var transform = movement.Transform;
+				var position = transform.position;
 
-				if (world.TryGetGameObject(entity, out var gameObject))
+				var travelVector = movement.Direction * (movement.Speed * deltaTime);
+				transform.position = position + travelVector;
+
+				if (hasTravelLog)
 				{
-					var transform = gameObject.transform;
-
-					var position = transform.position;
-					var travelVector = movement.Direction * (movement.Speed * deltaTime);
-					var newPosition = position + travelVector;
-
-					transform.LookAt(newPosition);
-					transform.position = newPosition;
-
-					if (hasTravelLog)
-					{
-						travelLog.TotalDistance += travelVector.magnitude;
-					}
+					travelLog.TotalDistance += travelVector.magnitude;
 				}
 			}
 
