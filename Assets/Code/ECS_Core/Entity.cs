@@ -6,10 +6,10 @@ namespace Beneton.ECS.Core
 	[Serializable]
 	public struct Entity : IEquatable<Entity>
 	{
-		private readonly int _id;
-
 		[SerializeField]
-		internal string IdString;
+		private int _id;
+
+		public int Id => _id;
 
 		internal const int NullId = 0;
 		public static readonly Entity Null = new(NullId);
@@ -20,7 +20,6 @@ namespace Beneton.ECS.Core
 		public Entity(int id)
 		{
 			_id = id;
-			IdString = _id.ToString();
 		}
 
 		public bool Equals(Entity other)
@@ -55,7 +54,7 @@ namespace Beneton.ECS.Core
 
 		public override string ToString()
 		{
-			return $"Entity ({IdString})";
+			return $"Entity ({_id.ToString()})";
 		}
 	}
 }

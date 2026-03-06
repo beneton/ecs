@@ -107,7 +107,7 @@ namespace Beneton.ECS.Core
 			if (!_world.HasEntity(entity))
 			{
 				Debug.LogError(
-					$"Trying to add component to an Entity that is not part of the World. Entity({entity.IdString}), Component: ({componentType})");
+					$"Trying to add component to an Entity that is not part of the World. Entity({entity.Id.ToString()}), Component: ({componentType})");
 				return;
 			}
 
@@ -122,7 +122,7 @@ namespace Beneton.ECS.Core
 				if (typedStorage.Length > 0)
 				{
 					Debug.LogError(
-						$"Couldn't add {componentType} to {entity.IdString} because {componentType} is a Singleton Component and another Entity already has it");
+						$"Couldn't add {componentType} to {entity.Id.ToString()} because {componentType} is a Singleton Component and another Entity already has it");
 					return;
 				}
 			}
@@ -154,14 +154,14 @@ namespace Beneton.ECS.Core
 			if (!_world.HasEntity(entity))
 			{
 				Debug.LogError(
-					$"Trying to update a component in an Entity that is not part of the World. Entity: ({entity.IdString}), Component: ({componentType})");
+					$"Trying to update a component in an Entity that is not part of the World. Entity: ({entity.Id.ToString()}), Component: ({componentType})");
 				return;
 			}
 
 			if (!TryGetTypedStorage<T>(out var typedStorage) || !typedStorage.HasComponent(entity))
 			{
 				Debug.LogError(
-					$"Trying to update a component in an Entity, but the Entity doesn't have that component. Entity: ({entity.IdString}), Component: ({componentType})");
+					$"Trying to update a component in an Entity, but the Entity doesn't have that component. Entity: ({entity.Id.ToString()}), Component: ({componentType})");
 				return;
 			}
 
@@ -229,7 +229,7 @@ namespace Beneton.ECS.Core
 			if (!_world.HasEntity(entity))
 			{
 				Debug.LogError(
-					$"Trying to remove component from an Entity that is not part of the World. Entity: ({entity.IdString}), Component: ({componentType})");
+					$"Trying to remove component from an Entity that is not part of the World. Entity: ({entity.Id.ToString()}), Component: ({componentType})");
 				return;
 			}
 
@@ -264,7 +264,7 @@ namespace Beneton.ECS.Core
 			if (!_world.HasEntity(entity))
 			{
 				Debug.LogError(
-					$"Trying to find component in an Entity that is not part of the World. Entity: ({entity.IdString}), Component: ({componentType})");
+					$"Trying to find component in an Entity that is not part of the World. Entity: ({entity.Id.ToString()}), Component: ({componentType})");
 				component = default;
 				return false;
 			}
@@ -291,7 +291,7 @@ namespace Beneton.ECS.Core
 			if (!_world.HasEntity(entity))
 			{
 				Debug.LogError(
-					$"Trying to find component in an Entity that is not part of the World. Entity: ({entity.IdString}), Component: ({typeId})");
+					$"Trying to find component in an Entity that is not part of the World. Entity: ({entity.Id.ToString()}), Component: ({typeId})");
 				return false;
 			}
 

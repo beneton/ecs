@@ -108,7 +108,7 @@ namespace Beneton.ECS.Core
 
 			var entity = InternalCreateEntity();
 			_entityGameObjectLookup.Set(entity, gameObject);
-			gameObject.name += $" [{entity.IdString}]";
+			gameObject.name += $" [{entity.Id.ToString()}]";
 			return entity;
 		}
 
