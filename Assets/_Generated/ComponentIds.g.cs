@@ -24,6 +24,12 @@ namespace ECSSample.Components
         public int TypeId => Id;
     }
 
+    public partial struct EntityCounter
+    {
+        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public int TypeId => Id;
+    }
+
     public partial struct Movement
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();

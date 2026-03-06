@@ -9,9 +9,12 @@ namespace ECSSample
 	/// </summary>
 	public class WorldRunner : MonoBehaviour
 	{
-		[Header("Traveler Prefab")]
+		[Header("Travelers")]
 		[SerializeField]
 		private GameObject _travelerPrefab;
+
+		[SerializeField]
+		private Transform _travelerContainer;
 
 		[Header("Traveler Materials")]
 		[SerializeField]
@@ -35,11 +38,12 @@ namespace ECSSample
 			_world.AddSystem(new MovementFeedbackSystem(_restingMaterial, _movingMaterial));
 
 			// Spawn
-			_world.AddSystem(new TravelerSpawnerSystem(_travelerPrefab));
+			_world.AddSystem(new TravelerSpawnerSystem(_travelerPrefab, _travelerContainer));
 			_world.AddSystem<TravelerDespawner>();
 
 			// UI Update
 			_world.AddSystem<TravelLogUpdateSystem>();
+			_world.AddSystem<EntityCounterUpdateSystem>();
 
 			// Input Cleanup
 			_world.AddSystem<InputCleanerSystem>();
