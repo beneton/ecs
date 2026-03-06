@@ -18,12 +18,6 @@ namespace ECSSample.Components
         public int TypeId => Id;
     }
 
-    public partial struct DirectionCommitment
-    {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
-        public int TypeId => Id;
-    }
-
     public partial struct ECSMeshRenderers
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
@@ -31,6 +25,12 @@ namespace ECSSample.Components
     }
 
     public partial struct Movement
+    {
+        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public int TypeId => Id;
+    }
+
+    public partial struct Moving
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
