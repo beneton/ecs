@@ -13,7 +13,7 @@ namespace ECSSample.Systems
 		public override void OnCreate(IArchetypeProvider archetypeProvider)
 		{
 			_moving = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, Movement.Id, TravelLog.Id, DirectionCommitment.Id });
+				new[] { Traveler.Id, Movement.Id, DirectionCommitment.Id });
 		}
 
 		public override void Update(
@@ -22,10 +22,13 @@ namespace ECSSample.Systems
 			ICommandBuffer commandBuffer,
 			IWorld world)
 		{
+			var hasTravelLog = componentManager.TryGetSingleton<TravelLog>(
+				out var travelLogEntity,
+				out var travelLog);
+
 			foreach (var entity in componentManager.GetEntities(_moving))
 			{
 				var movement = componentManager.GetComponent<Movement>(entity);
-				var travelLog = componentManager.GetComponent<TravelLog>(entity);
 
 				if (world.TryGetGameObject(entity, out var gameObject))
 				{
@@ -38,7 +41,12 @@ namespace ECSSample.Systems
 					transform.LookAt(newPosition);
 					transform.position = newPosition;
 
-					travelLog.TotalDistance += travelVector.magnitude;
+					if (hasTravelLog)
+					{
+						travelLog.TotalDistance += travelVector.magnitude;
+						travelLog.DistanceTextField.text = travelLog.TotalDistance.ToString("F0");
+						commandBuffer.UpdateComponent(travelLogEntity, travelLog);
+					}
 				}
 			}
 		}

@@ -21,14 +21,6 @@ namespace ECSSample.Components
 					Speed = Random.Range(1f, 3f)
 				});
 
-			componentManager.AddComponent(
-				entity,
-				new TravelLog
-				{
-					DirectionChangeCount = 0,
-					TotalDistance = 0
-				});
-
 			// A cache to avoid calling GetComponents inside systems
 			componentManager.AddComponent(
 				entity,

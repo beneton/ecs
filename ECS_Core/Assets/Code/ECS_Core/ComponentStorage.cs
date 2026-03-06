@@ -7,10 +7,10 @@ namespace Beneton.ECS.Core
 		// Key is Entity.Id
 		private readonly SparseSet<T> _components = new();
 
-		public Type GetComponentType()
-		{
-			return typeof(T);
-		}
+		public ReadOnlySpan<int> Keys => _components.Keys;
+		public ReadOnlySpan<T> Values => _components.Values;
+
+		public int Length => _components.Length;
 
 		public void Set(Entity entity, in T component)
 		{

@@ -14,6 +14,7 @@ namespace Beneton.ECS.Core
 
 		private static T Null = default;
 
+		public int Length => _count;
 		public ReadOnlySpan<int> Keys => new(_dense, 0, _count);
 		public ReadOnlySpan<T> Values => new(_values, 0, _count);
 

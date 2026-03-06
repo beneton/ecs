@@ -75,15 +75,22 @@ namespace Beneton.ECS.Core
 			return _entitiesInArchetype.Get(archetype.Id).Values;
 		}
 
-		public Entity GetFirstEntity(Archetype archetype)
+		public bool TryGetSingleton<T>(out Entity entity, out T component)
+			where T : struct, ISingletonComponent
 		{
-			var set = GetEntities(archetype);
-			foreach (var entity in set)
+			if (TryGetTypedStorage<T>(out var typedStorage))
 			{
-				return entity;
+				if (typedStorage.Length > 0)
+				{
+					entity = new Entity(typedStorage.Keys[0]);
+					component = typedStorage.Get(entity);
+					return true;
+				}
 			}
 
-			return Entity.Null;
+			entity = Entity.Null;
+			component = default;
+			return false;
 		}
 
 		public void AddComponent<T>(Entity entity, in T component) where T : struct, IComponent
@@ -92,7 +99,6 @@ namespace Beneton.ECS.Core
 			var typeId = new T().TypeId;
 			if (entity.IsNull)
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
 					$"Trying to add component to a null Entity. Component: ({componentType})");
 				return;
@@ -100,9 +106,8 @@ namespace Beneton.ECS.Core
 
 			if (!_world.HasEntity(entity))
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
-					$"Trying to add component to an Entity that is not part of the World. Entity({entity.ToString()}), Component: ({componentType})");
+					$"Trying to add component to an Entity that is not part of the World. Entity({entity.IdString}), Component: ({componentType})");
 				return;
 			}
 
@@ -112,9 +117,18 @@ namespace Beneton.ECS.Core
 				_componentStorages.Set(typeId, typedStorage);
 			}
 
+			if (typeof(ISingletonComponent).IsAssignableFrom(componentType))
+			{
+				if (typedStorage.Length > 0)
+				{
+					Debug.LogError(
+						$"Couldn't add {componentType} to {entity.IdString} because {componentType} is a Singleton Component and another Entity already has it");
+					return;
+				}
+			}
+
 			if (typedStorage.HasComponent(entity))
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
 					$"{entity.ToString()} already has component {componentType}. Consider using Update instead.");
 				return;
@@ -132,7 +146,6 @@ namespace Beneton.ECS.Core
 			var typeId = new T().TypeId;
 			if (entity.IsNull)
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
 					$"Trying to update a component in a null Entity. Component: ({componentType})");
 				return;
@@ -140,17 +153,15 @@ namespace Beneton.ECS.Core
 
 			if (!_world.HasEntity(entity))
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
-					$"Trying to update a component in an Entity that is not part of the World. Entity({entity.ToString()}), Component: ({componentType})");
+					$"Trying to update a component in an Entity that is not part of the World. Entity: ({entity.IdString}), Component: ({componentType})");
 				return;
 			}
 
 			if (!TryGetTypedStorage<T>(out var typedStorage) || !typedStorage.HasComponent(entity))
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
-					$"Trying to update a component in an Entity, but the Entity doesn't have that component. Entity({entity.ToString()}), Component: ({componentType})");
+					$"Trying to update a component in an Entity, but the Entity doesn't have that component. Entity: ({entity.IdString}), Component: ({componentType})");
 				return;
 			}
 
@@ -210,7 +221,6 @@ namespace Beneton.ECS.Core
 			var typeId = new T().TypeId;
 			if (entity.IsNull)
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
 					$"Trying to remove component from a null Entity. Component: ({componentType})");
 				return;
@@ -218,9 +228,8 @@ namespace Beneton.ECS.Core
 
 			if (!_world.HasEntity(entity))
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
-					$"Trying to remove component from an Entity that is not part of the World. Entity({entity.ToString()}), Component: ({componentType})");
+					$"Trying to remove component from an Entity that is not part of the World. Entity: ({entity.IdString}), Component: ({componentType})");
 				return;
 			}
 
@@ -246,7 +255,6 @@ namespace Beneton.ECS.Core
 			var componentType = typeof(T);
 			if (entity.IsNull)
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
 					$"Trying to find component in a null Entity. Component: ({componentType})");
 				component = default;
@@ -255,9 +263,8 @@ namespace Beneton.ECS.Core
 
 			if (!_world.HasEntity(entity))
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
-					$"Trying to find component in an Entity that is not part of the World. Entity({entity.ToString()}), Component: ({componentType})");
+					$"Trying to find component in an Entity that is not part of the World. Entity: ({entity.IdString}), Component: ({componentType})");
 				component = default;
 				return false;
 			}
@@ -276,7 +283,6 @@ namespace Beneton.ECS.Core
 			var typeId = new T().TypeId;
 			if (entity.IsNull)
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
 					$"Trying to find component in a null Entity. Component: ({typeId})");
 				return false;
@@ -284,9 +290,8 @@ namespace Beneton.ECS.Core
 
 			if (!_world.HasEntity(entity))
 			{
-				// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 				Debug.LogError(
-					$"Trying to find component in an Entity that is not part of the World. Entity({entity.ToString()}), Component: ({typeId})");
+					$"Trying to find component in an Entity that is not part of the World. Entity: ({entity.IdString}), Component: ({typeId})");
 				return false;
 			}
 

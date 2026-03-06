@@ -21,11 +21,11 @@ namespace ECSSample.Systems
 				new[] { Resting.Id, DirectionCommitment.Id });
 
 			_travelers = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, Movement.Id, TravelLog.Id, DirectionCommitment.Id },
+				new[] { Traveler.Id, Movement.Id, DirectionCommitment.Id },
 				new[] { Resting.Id });
 
 			_restingTravelers = archetypeProvider.GetOrCreateArchetype(
-				new[] { Traveler.Id, Movement.Id, TravelLog.Id, Resting.Id },
+				new[] { Traveler.Id, Movement.Id, Resting.Id },
 				new[] { DirectionCommitment.Id });
 		}
 
@@ -94,10 +94,6 @@ namespace ECSSample.Systems
 						Random.Range(-1f, 1f))
 					.normalized;
 				commandBuffer.UpdateComponent(entity, movement);
-
-				var travelLog = componentManager.GetComponent<TravelLog>(entity);
-				travelLog.DirectionChangeCount++;
-				commandBuffer.UpdateComponent(entity, travelLog);
 			}
 		}
 	}
