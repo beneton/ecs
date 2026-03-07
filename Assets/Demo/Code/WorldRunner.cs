@@ -39,7 +39,7 @@ namespace ECSSample
 
 			// Spawn
 			_world.AddSystem(new TravelerSpawnerSystem(_travelerPrefab, _travelerContainer));
-			_world.AddSystem<TravelerDespawner>();
+			_world.AddSystem<TravelerDespawnerSystem>();
 
 			// UI Update
 			_world.AddSystem<TravelLogUpdateSystem>();

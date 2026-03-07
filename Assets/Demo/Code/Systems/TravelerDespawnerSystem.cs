@@ -7,7 +7,7 @@ namespace ECSSample.Systems
 	/// <summary>
 	/// Handles click on travelers to despawn them
 	/// </summary>
-	public class TravelerDespawner : BaseSystem
+	public class TravelerDespawnerSystem : BaseSystem
 	{
 		private Archetype _clickedTravelers;
 
