@@ -22,10 +22,15 @@ namespace Beneton.ECS.Core
 		private readonly SparseSet<Entity> _entities = new();
 		private readonly SparseSet<GameObject> _entityGameObjectLookup = new();
 
+		// Id is Entity Id
+		private readonly SparseSet<InputDetectorNodeBaker> _inputBakers = new();
+
 		private int _entityId = Entity.NullId + 1;
 		private int _systemId = 1;
 
 		public ComponentManager ComponentManager { get; }
+
+		private readonly CommandBuffer<DistributedInputDetectionSystem> _inputCommandBuffer;
 
 		public World()
 		{
@@ -38,6 +43,7 @@ namespace Beneton.ECS.Core
 			debugRef.ComponentManager = ComponentManager;
 			ComponentManager.TryFindTimelineHandler();
 #endif
+			_inputCommandBuffer = new CommandBuffer<DistributedInputDetectionSystem>();
 		}
 
 		public T AddSystem<T>() where T : BaseSystem, new()
@@ -63,10 +69,11 @@ namespace Beneton.ECS.Core
 		private T AddSystem<T>(T system, SparseSet<SystemCommandBufferPair> systemCollection)
 			where T : BaseSystem
 		{
+			var commandBuffer = new CommandBuffer<T>();
 			var pair = new SystemCommandBufferPair
 			{
 				System = system,
-				CommandBuffer = new CommandBuffer<T>()
+				CommandBuffer = commandBuffer
 			};
 
 			systemCollection.Set(_systemId, pair);
@@ -79,7 +86,20 @@ namespace Beneton.ECS.Core
 		public void Bake(Baker baker)
 		{
 			var entity = GetOrCreateEntity(baker.gameObject);
-			baker.Bake(entity, ComponentManager, this);
+			InternalBake(entity, baker);
+		}
+
+		private void InternalBake(Entity entity, Baker baker)
+		{
+			if (baker is InputDetectorNodeBaker inputDetectorBaker)
+			{
+				_inputBakers.Set(entity, inputDetectorBaker);
+				inputDetectorBaker.Bake(entity, ComponentManager, _inputCommandBuffer, this);
+			}
+			else
+			{
+				baker.Bake(entity, ComponentManager, this);
+			}
 		}
 
 		public Entity CreateEntity(string entityName)
@@ -153,7 +173,7 @@ namespace Beneton.ECS.Core
 			var bakers = instance.GetComponentsInChildren<Baker>(false);
 			foreach (var baker in bakers)
 			{
-				baker.Bake(entity, ComponentManager, this);
+				InternalBake(entity, baker);
 			}
 
 			return (entity, instance);
@@ -164,6 +184,7 @@ namespace Beneton.ECS.Core
 			_entities.Remove(entity);
 			ComponentManager.RemoveAllComponents(entity);
 			_entityGameObjectLookup.Remove(entity);
+			_inputBakers.Remove(entity);
 		}
 
 		public bool HasEntity(Entity entity)
@@ -183,6 +204,15 @@ namespace Beneton.ECS.Core
 
 		public void Update(float deltaTime)
 		{
+			// Update all InputBakers
+			foreach (var inputBaker in _inputBakers.Values)
+			{
+				inputBaker.EcsUpdate(deltaTime);
+			}
+
+			// Execute Input CommandBuffer
+			_inputCommandBuffer.Execute(ComponentManager);
+
 			foreach (var pair in _systems.Values)
 			{
 				pair.System.Update(deltaTime, ComponentManager, pair.CommandBuffer, this);

@@ -1,9 +1,10 @@
 using Beneton.ECS.Core;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace ECSSample.Components
 {
-	public class TravelerBaker : Baker
+	public class TravelerBaker : InputDetectorNodeBaker, IPointerClickHandler
 	{
 		protected override void Bake(
 			Entity entity,
@@ -32,6 +33,21 @@ namespace ECSSample.Components
 				{
 					MeshRenderers = GetComponentsInChildren<MeshRenderer>()
 				});
+		}
+
+		public void OnPointerClick(PointerEventData eventData)
+		{
+			CommandBuffer.AddComponent(Entity, new Clicked());
+		}
+
+		protected override void EcsUpdate(float deltaTime)
+		{
+		}
+
+		protected override void CleanUp()
+		{
+			// If no one detected the click, remove it
+			CommandBuffer.RemoveComponent<Clicked>(Entity);
 		}
 	}
 }

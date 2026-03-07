@@ -29,9 +29,6 @@ namespace ECSSample
 		{
 			_world = new World();
 
-			// Input
-			_world.AddSystem<InputDetectorSystem>();
-
 			// Movement
 			_world.AddSystem<MoveDirectionSelectorSystem>();
 			_world.AddSystem<MoveSystem>();
@@ -44,9 +41,6 @@ namespace ECSSample
 			// UI Update
 			_world.AddSystem<TravelLogUpdateSystem>();
 			_world.AddSystem<EntityCounterUpdateSystem>();
-
-			// Input Cleanup
-			_world.AddSystem<InputCleanerSystem>();
 
 			var allBakers = FindObjectsByType<Baker>(
 				FindObjectsInactive.Exclude,

@@ -885,6 +885,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e7cba5a40bf43668ee9efda8e3e7f46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ECSSample.Components.AddTravelerButtonBaker
+  _button: {fileID: 906365568}
   _count: 1000
 --- !u!114 &906365568
 MonoBehaviour:
@@ -1545,6 +1546,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e7cba5a40bf43668ee9efda8e3e7f46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ECSSample.Components.AddTravelerButtonBaker
+  _button: {fileID: 1202760626}
   _count: 100
 --- !u!1 &1368605018
 GameObject:
@@ -2105,6 +2107,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e7cba5a40bf43668ee9efda8e3e7f46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ECSSample.Components.AddTravelerButtonBaker
+  _button: {fileID: 1445352086}
   _count: 10
 --- !u!1 &1577737529
 GameObject:
@@ -2656,6 +2659,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e7cba5a40bf43668ee9efda8e3e7f46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ECSSample.Components.AddTravelerButtonBaker
+  _button: {fileID: 2043190507}
   _count: 1
 --- !u!1 &2049787839
 GameObject:
