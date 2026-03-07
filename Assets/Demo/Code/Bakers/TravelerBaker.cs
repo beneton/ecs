@@ -1,11 +1,15 @@
 using Beneton.ECS.Core;
+using ECSSample.Systems;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Random = UnityEngine.Random;
 
 namespace ECSSample.Components
 {
-	public class TravelerBaker : InputDetectorNodeBaker, IPointerClickHandler
+	public class TravelerBaker : Baker, IPointerClickHandler, IDistributedNode<InputDetectorSystem>
 	{
+		private bool _wasClicked;
+
 		protected override void Bake(
 			Entity entity,
 			IComponentManager componentManager,
@@ -37,17 +41,28 @@ namespace ECSSample.Components
 
 		public void OnPointerClick(PointerEventData eventData)
 		{
-			CommandBuffer.AddComponent(Entity, new Clicked());
+			_wasClicked = true;
 		}
 
-		protected override void EcsUpdate(float deltaTime)
+		public GameObject GetGameObject()
 		{
+			return gameObject;
 		}
 
-		protected override void CleanUp()
+		public void EcsUpdate(
+			float deltaTime,
+			Entity entity,
+			IComponentGetter componentManager,
+			ICommandBuffer commandBuffer,
+			IWorld world)
 		{
-			// If no one detected the click, remove it
-			CommandBuffer.RemoveComponent<Clicked>(Entity);
+			if (!_wasClicked)
+			{
+				return;
+			}
+
+			commandBuffer.AddComponent(entity, new Clicked());
+			_wasClicked = false;
 		}
 	}
 }

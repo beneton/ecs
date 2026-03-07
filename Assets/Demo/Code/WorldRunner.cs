@@ -1,4 +1,6 @@
-﻿using Beneton.ECS.Core;
+﻿using System;
+using System.Linq;
+using Beneton.ECS.Core;
 using ECSSample.Systems;
 using UnityEngine;
 
@@ -30,6 +32,13 @@ namespace ECSSample
 			_world = new World();
 
 			// Movement
+			var inputDetectorSystem = _world.AddSystem<InputDetectorSystem>();
+			FindComponentAndCall<IDistributedNode<InputDetectorSystem>>(node =>
+			{
+				var entity = _world.GetOrCreateEntity(node.GetGameObject());
+				inputDetectorSystem.RegisterNode(node, entity);
+			});
+
 			_world.AddSystem<MoveDirectionSelectorSystem>();
 			_world.AddSystem<MoveSystem>();
 			_world.AddSystem(new MovementFeedbackSystem(_restingMaterial, _movingMaterial));
@@ -62,6 +71,21 @@ namespace ECSSample
 		private void LateUpdate()
 		{
 			_world.LateUpdate(Time.fixedDeltaTime);
+		}
+
+		private static void FindComponentAndCall<T>(Action<T> method)
+		{
+			var allElements = FindObjectsByType<Transform>(
+					FindObjectsInactive.Exclude,
+					FindObjectsSortMode.None)
+				.Select(m => m.GetComponent<T>())
+				.Where(i => i != null)
+				.ToArray();
+
+			foreach (var element in allElements)
+			{
+				method(element);
+			}
 		}
 	}
 }

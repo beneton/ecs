@@ -1,16 +1,19 @@
 using Beneton.ECS.Core;
+using ECSSample.Systems;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ECSSample.Components
 {
-	public class AddTravelerButtonBaker : InputDetectorNodeBaker
+	public class AddTravelerButtonBaker : Baker, IDistributedNode<InputDetectorSystem>
 	{
 		[SerializeField]
 		private Button _button;
 
 		[SerializeField]
 		private int _count = 1;
+
+		private bool _wasClicked = false;
 
 		private void Awake()
 		{
@@ -19,7 +22,7 @@ namespace ECSSample.Components
 
 		private void OnButtonClick()
 		{
-			CommandBuffer.AddComponent(Entity, new Clicked());
+			_wasClicked = true;
 		}
 
 		protected override void Bake(
@@ -35,14 +38,25 @@ namespace ECSSample.Components
 				});
 		}
 
-		protected override void EcsUpdate(float deltaTime)
+		public GameObject GetGameObject()
 		{
-			
+			return gameObject;
 		}
 
-		protected override void CleanUp()
+		public void EcsUpdate(
+			float deltaTime,
+			Entity entity,
+			IComponentGetter componentManager,
+			ICommandBuffer commandBuffer,
+			IWorld world)
 		{
-			CommandBuffer.RemoveComponent<Clicked>(Entity);
+			if (!_wasClicked)
+			{
+				return;
+			}
+
+			commandBuffer.AddComponent(entity, new Clicked());
+			_wasClicked = false;
 		}
 	}
 }

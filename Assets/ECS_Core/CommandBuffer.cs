@@ -1,6 +1,6 @@
 namespace Beneton.ECS.Core
 {
-	public class CommandBuffer<TSystem> : ICommandBuffer where TSystem : BaseSystem
+	public class CommandBuffer<TOwner> : ICommandBuffer
 	{
 		private readonly SparseSet<ICommand> _commands = new();
 		private int _commandId = 0;

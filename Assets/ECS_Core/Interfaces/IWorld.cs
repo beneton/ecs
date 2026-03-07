@@ -9,6 +9,7 @@ namespace Beneton.ECS.Core
 		Entity CreateEntity(string entityName);
 		Entity GetOrCreateEntity(GameObject gameObject);
 		bool TryGetEntity(GameObject gameObject, out Entity entity);
+		bool HasEntity(Entity entity);
 		bool TryGetGameObject(Entity entity, out GameObject gameObject);
 		void DestroyEntity(Entity entity);
 		ReadOnlySpan<Entity> GetEntities();

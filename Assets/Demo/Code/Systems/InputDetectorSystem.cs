@@ -1,12 +1,35 @@
-using System.Collections.Generic;
 using Beneton.ECS.Core;
 using ECSSample.Components;
-using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 
 namespace ECSSample.Systems
 {
+	public class InputDetectorSystem : DistributedSystem<InputDetectorSystem>
+	{
+		private Archetype _clicked;
+
+		public override void OnCreate(IArchetypeProvider archetypeProvider)
+		{
+			base.OnCreate(archetypeProvider);
+			
+			_clicked = archetypeProvider.GetOrCreateArchetype(
+				new[] { Clicked.Id });
+		}
+
+		public override void Update(
+			float deltaTime,
+			IComponentGetter componentManager,
+			ICommandBuffer commandBuffer,
+			IWorld world)
+		{
+			foreach (var entity in componentManager.GetEntities(_clicked))
+			{
+				commandBuffer.RemoveComponent<Clicked>(entity);
+			}
+
+			base.Update(deltaTime, componentManager, commandBuffer, world);
+		}
+	}
+	/*
 	/// <summary>
 	/// Detects and register clicks by adding Clicked component
 	/// </summary>
@@ -56,4 +79,5 @@ namespace ECSSample.Systems
 			}
 		}
 	}
+	*/
 }
