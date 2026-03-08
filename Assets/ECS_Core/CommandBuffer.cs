@@ -1,5 +1,12 @@
 namespace Beneton.ECS.Core
 {
+	/// <summary>
+	/// Provides a deferred execution buffer for entity component modifications.
+	/// - Records component additions, updates, and removals to be executed as a batch.
+	/// - Minimizes structural overhead by deferring archetype updates until the entire buffer is processed.
+	/// - Typically used within systems to perform thread-safe or delayed entity modifications.
+	/// Note that this class is Generic so that the system iy belongs to shows in the stack traces and helps with debugging
+	/// </summary>
 	public class CommandBuffer<TOwner> : ICommandBuffer
 	{
 		private readonly SparseSet<ICommand> _commands = new();

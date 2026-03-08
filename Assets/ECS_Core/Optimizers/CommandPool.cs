@@ -2,6 +2,12 @@
 
 namespace Beneton.ECS.Core
 {
+	/// <summary>
+	/// Provides a high-performance object pooling mechanism for command objects.
+	/// - Reduces memory allocations and garbage collection pressure by reusing command instances.
+	/// - Implements <see cref="Rent"/> and <see cref="Return"/> methods for efficient object lifecycle management.
+	/// - Automatically expands its internal storage capacity when the pool is exhausted.
+	/// </summary>
 	public sealed class CommandPool<T> where T : class
 	{
 		private T[] _items;

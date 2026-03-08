@@ -4,7 +4,7 @@ using ECSSample.Components;
 namespace ECSSample.Systems
 {
 	/// <summary>
-	/// Moves travelers based on direction and speed
+	/// Updates traveler positions based on their <see cref="Movement"/> data and increments total distance in the <see cref="TravelLog"/>.
 	/// </summary>
 	public class MoveSystem : BaseSystem
 	{

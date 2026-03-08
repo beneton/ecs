@@ -5,10 +5,9 @@ using UnityEngine;
 namespace ECSSample
 {
 	/// <summary>
-	/// Responsible for:
-	/// - Create ECS World
-	/// - Register Systems, and provide dependencies to Systems
-	/// - Call update methods in the World
+	/// Acts as the main entry point and orchestrator for the ECS lifecycle within the Unity scene.
+	/// It is responsible for initializing the <see cref="World"/>, registering and configuring systems, 
+	/// and bridging Unity's MonoBehaviour update cycles (<c>Update</c>, <c>LateUpdate</c>) to the ECS framework.
 	/// </summary>
 	public class WorldRunner : MonoBehaviour
 	{

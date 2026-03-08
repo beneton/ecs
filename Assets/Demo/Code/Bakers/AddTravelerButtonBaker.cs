@@ -5,6 +5,11 @@ using UnityEngine.UI;
 
 namespace ECSSample.Components
 {
+	/// <summary>
+	/// Baker responsible for initializing the Add Traveler UI button.
+	/// - Bakes the <see cref="AddTravelerButton"/> component with the configured amount.
+	/// - Bridges Unity UI <see cref="Button"/> clicks into the ECS by adding a <see cref="Clicked"/> component during the <see cref="InputDetectorSystem"/> update.
+	/// </summary>
 	public class AddTravelerButtonBaker : Baker, ISystemNode<InputDetectorSystem>
 	{
 		[SerializeField]
@@ -38,12 +43,7 @@ namespace ECSSample.Components
 				});
 		}
 
-		public GameObject GetGameObject()
-		{
-			return gameObject;
-		}
-
-		public void EcsUpdate(
+		void ISystemNode.EcsUpdate(
 			float deltaTime,
 			Entity entity,
 			IComponentGetter componentManager,

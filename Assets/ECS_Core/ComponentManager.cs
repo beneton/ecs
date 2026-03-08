@@ -7,6 +7,12 @@ using Beneton.ECS.Core.Editor;
 
 namespace Beneton.ECS.Core
 {
+	/// <summary>
+	/// Manages the storage and lifecycle of components for entities within the ECS.
+	/// - Handles the creation and management of archetypes
+	/// - Provides efficient component access and modification 
+	/// - Orchestrates entity membership in archetypes based on component composition.
+	/// </summary>
 	public class ComponentManager : IArchetypeProvider, IComponentManager
 	{
 		// Key is Component Type Id
@@ -34,7 +40,7 @@ namespace Beneton.ECS.Core
 		internal void TryFindTimelineHandler()
 		{
 #if UNITY_EDITOR
-			var ecsTimeline = Resources.FindObjectsOfTypeAll<ECSTimeline>();
+			var ecsTimeline = Resources.FindObjectsOfTypeAll<EcsTimeline>();
 			if (ecsTimeline is { Length: > 0 })
 			{
 				SetTimelineHandler(ecsTimeline[0]);

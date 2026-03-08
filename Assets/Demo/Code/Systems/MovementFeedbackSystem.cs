@@ -5,7 +5,7 @@ using UnityEngine;
 namespace ECSSample.Systems
 {
 	/// <summary>
-	/// Change materials based on resting or moving
+	/// Updates traveler visuals, such as swapping materials between moving and resting states, using cached <see cref="EcsMeshRenderers"/>.
 	/// </summary>
 	public class MovementFeedbackSystem : BaseSystem
 	{
@@ -24,10 +24,10 @@ namespace ECSSample.Systems
 		public override void OnCreate(IArchetypeProvider archetypeProvider)
 		{
 			_enteringRest = archetypeProvider.GetOrCreateArchetype(
-				new[] { StartedResting.Id, ECSMeshRenderers.Id });
+				new[] { StartedResting.Id, EcsMeshRenderers.Id });
 
 			_enteringMove = archetypeProvider.GetOrCreateArchetype(
-				new[] { StartedMoving.Id, ECSMeshRenderers.Id });
+				new[] { StartedMoving.Id, EcsMeshRenderers.Id });
 		}
 
 		public override void Update(
@@ -38,7 +38,7 @@ namespace ECSSample.Systems
 		{
 			foreach (var entity in componentManager.GetEntities(_enteringRest))
 			{
-				var ecsMeshRenderers = componentManager.GetComponent<ECSMeshRenderers>(entity);
+				var ecsMeshRenderers = componentManager.GetComponent<EcsMeshRenderers>(entity);
 				foreach (var renderer in ecsMeshRenderers.MeshRenderers)
 				{
 					renderer.sharedMaterial = _restingMaterial;
@@ -47,7 +47,7 @@ namespace ECSSample.Systems
 
 			foreach (var entity in componentManager.GetEntities(_enteringMove))
 			{
-				var ecsMeshRenderers = componentManager.GetComponent<ECSMeshRenderers>(entity);
+				var ecsMeshRenderers = componentManager.GetComponent<EcsMeshRenderers>(entity);
 				foreach (var renderer in ecsMeshRenderers.MeshRenderers)
 				{
 					renderer.sharedMaterial = _movingMaterial;

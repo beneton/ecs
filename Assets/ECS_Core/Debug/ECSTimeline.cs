@@ -4,7 +4,12 @@ using UnityEngine;
 
 namespace Beneton.ECS.Core.Editor
 {
-	public class ECSTimeline : EditorWindow, ITimelineHandler
+	/// <summary>
+	/// Provides a real-time, chronological log of component lifecycle events within the ECS for debugging purposes.
+	/// - Intention: To capture and display a sequence of "Adding", "Updating", and "Removing" component operations in the Unity Editor during Play Mode.
+	/// - Usefulness: Helps developers trace the exact order and timing of state changes for entities, making it easier to identify unexpected behaviors or race conditions in system logic.
+	/// </summary>
+	public class EcsTimeline : EditorWindow, ITimelineHandler
 	{
 		// Key is Component.Id
 		private SparseSet<string> _componentNames;
@@ -48,7 +53,7 @@ namespace Beneton.ECS.Core.Editor
 		[MenuItem("Debug/ECS Timeline")]
 		public static void ShowWindow()
 		{
-			GetWindow<ECSTimeline>("ECS Timeline");
+			GetWindow<EcsTimeline>("ECS Timeline");
 		}
 
 		private void OnEnable()

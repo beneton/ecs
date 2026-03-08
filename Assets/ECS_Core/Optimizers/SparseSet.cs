@@ -3,7 +3,10 @@
 namespace Beneton.ECS.Core
 {
 	/// <summary>
-	/// Effectively a fast alternative for Dictionaries/HashSets using int as keys
+	/// Provides a high-performance alternative to Dictionaries/HashSets for mapping integer keys to values of type <typeparamref name="T"/>.
+	/// - Mechanism: Uses a dual-array approach with a "sparse" array (mapping keys to dense indices) and "dense" arrays (storing keys and values contiguously).
+	/// - Speed: Offers O(1) complexity for insertion, removal, and lookup, and is cache-friendly for iterations as values are stored contiguously in memory.
+	/// - Drawbacks: Can be memory-intensive, as the sparse array's size is proportional to the highest key value rather than the number of stored elements.
 	/// </summary>
 	public sealed class SparseSet<T>
 	{

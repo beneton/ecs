@@ -5,6 +5,12 @@ using UnityEngine;
 
 namespace Beneton.ECS.Core.Editor
 {
+	/// <summary>
+	/// Provides a real-time debug interface for inspecting ECS archetypes and their entity memberships within the Unity Editor.
+	/// - Intention: To provide a clear overview of how entities are grouped into archetypes based on their component composition.
+	/// - Usefulness: Helps developers verify that entities are correctly matched to archetypes, inspect the required/excluded component sets for each archetype,
+	/// and quickly locate specific entities in the Unity hierarchy for further inspection.
+	/// </summary>
 	public class ArchetypeInspector : EditorWindow
 	{
 		private Vector2 _scrollPosition = Vector2.zero;

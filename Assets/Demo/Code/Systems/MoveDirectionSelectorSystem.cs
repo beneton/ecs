@@ -6,7 +6,7 @@ using Random = UnityEngine.Random;
 namespace ECSSample.Systems
 {
 	/// <summary>
-	/// Decides when travelers should change direction and rest
+	/// Orchestrates the high-level logic for travelers, deciding when they should move, rest, or change direction.
 	/// </summary>
 	public class MoveDirectionSelectorSystem : BaseSystem
 	{

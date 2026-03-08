@@ -3,7 +3,10 @@ using UnityEngine;
 
 namespace ECSSample.Components
 {
-	public partial struct ECSMeshRenderers : IComponent
+	/// <summary>
+	/// Caches Unity <see cref="MeshRenderer"/> references for an entity, allowing ECS systems to modify visual properties.
+	/// </summary>
+	public partial struct EcsMeshRenderers : IComponent
 	{
 		public MeshRenderer[] MeshRenderers;
 	}

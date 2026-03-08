@@ -2,6 +2,11 @@
 
 namespace Beneton.ECS.Core
 {
+	/// <summary>
+	/// Defines the interface for querying and retrieving component data and entities.
+	/// - Part of the <see cref="ComponentManager"/>'s responsibility split.
+	/// - Provides read-only access to components, entity collections, and singleton instances.
+	/// </summary>
 	public interface IComponentGetter
 	{
 		ReadOnlySpan<Entity> GetEntities(Archetype archetype);

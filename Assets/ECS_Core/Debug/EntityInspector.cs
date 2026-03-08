@@ -6,6 +6,12 @@ using UnityEngine;
 
 namespace Beneton.ECS.Core.Editor
 {
+	/// <summary>
+	/// Provides a real-time debug interface for inspecting ECS entities and their components within the Unity Editor.
+	/// - Intention: To bridge the gap between the Unity hierarchy and the internal ECS state during Play Mode.
+	/// - Usefulness: Facilitates debugging by allowing developers to select a <see cref="GameObject"/> and view the full data of its associated <see cref="Entity"/>,
+	/// including all attached components and their current values formatted as JSON.
+	/// </summary>
 	public class EntityInspector : EditorWindow
 	{
 		[Serializable]

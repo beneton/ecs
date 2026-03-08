@@ -2,6 +2,12 @@ using System.Linq;
 
 namespace Beneton.ECS.Core
 {
+	/// <summary>
+	/// Represents a unique combination of required and excluded component types within the ECS.
+	/// - Used to filter and identify entities based on their component composition.
+	/// - Provides efficient matching logic to determine if an entity belongs to this archetype.
+	/// - Serves as a fundamental building block for system queries and data organization.
+	/// </summary>
 	public class Archetype
 	{
 		private readonly int _id;

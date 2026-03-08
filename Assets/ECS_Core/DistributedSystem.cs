@@ -2,6 +2,13 @@
 
 namespace Beneton.ECS.Core
 {
+	/// <summary>
+	/// Represents an abstract system that distributes its <see cref="Update"/> loop among multiple <see cref="ISystemNode"/> instances.
+	/// - Enables building systems that are composed of multiple independent logic nodes tied to specific entities.
+	/// - Provides a bridge for Unity <see cref="UnityEngine.MonoBehaviour"/>s to function as ECS logic nodes while maintaining secure access to the world.
+	/// - A common use case is handling input or other event-driven behaviors where per-entity node logic is preferred over a centralized loop.
+	/// </summary>
+	/// <typeparam name="T">The type of the concrete system implementing the distributed logic.</typeparam>
 	public abstract class DistributedSystem<T> : BaseSystem, IDistributedSystem
 		where T : BaseSystem
 	{

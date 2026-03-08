@@ -3,6 +3,9 @@ using ECSSample.Components;
 
 namespace ECSSample.Systems
 {
+	/// <summary>
+	/// Manages distributed input detection nodes
+	/// </summary>
 	public class InputDetectorSystem : DistributedSystem<InputDetectorSystem>
 	{
 		private Archetype _clicked;
@@ -21,6 +24,7 @@ namespace ECSSample.Systems
 			ICommandBuffer commandBuffer,
 			IWorld world)
 		{
+			// Removes unhandled clicks from previous frame
 			foreach (var entity in componentManager.GetEntities(_clicked))
 			{
 				commandBuffer.RemoveComponent<Clicked>(entity);

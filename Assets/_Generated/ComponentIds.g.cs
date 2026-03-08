@@ -18,7 +18,7 @@ namespace ECSSample.Components
         public int TypeId => Id;
     }
 
-    public partial struct ECSMeshRenderers
+    public partial struct EcsMeshRenderers
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace ECSSample.Systems
 {
 	/// <summary>
-	/// Handles click on travelers to despawn them
+	/// Detects <see cref="Clicked"/> events on <see cref="Traveler"/> entities and destroys both their Unity GameObjects and ECS entities.
 	/// </summary>
 	public class TravelerDespawnerSystem : BaseSystem
 	{

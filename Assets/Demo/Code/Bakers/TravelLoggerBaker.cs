@@ -4,6 +4,10 @@ using UnityEngine;
 
 namespace ECSSample.Components
 {
+	/// <summary>
+	/// Baker responsible for providing a reference to the Travel Log distance UI text.
+	/// - Bakes the <see cref="TravelLog"/> component with a reference to a <see cref="TextMeshProUGUI"/> field.
+	/// </summary>
 	public class TravelLoggerBaker : Baker
 	{
 		[SerializeField]

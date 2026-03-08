@@ -3,6 +3,9 @@ using ECSSample.Components;
 
 namespace ECSSample.Systems
 {
+	/// <summary>
+	/// Updates the <see cref="EntityCounter"/> singleton UI to display the current total number of entities in the <see cref="World"/>.
+	/// </summary>
 	public class EntityCounterUpdateSystem : BaseSystem
 	{
 		public override void OnCreate(IArchetypeProvider archetypeProvider)

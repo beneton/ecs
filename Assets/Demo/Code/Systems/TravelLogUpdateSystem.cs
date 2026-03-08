@@ -3,6 +3,9 @@ using ECSSample.Components;
 
 namespace ECSSample.Systems
 {
+	/// <summary>
+	/// Updates the <see cref="TravelLog"/> singleton UI to display the accumulated total distance traveled by all entities.
+	/// </summary>
 	public class TravelLogUpdateSystem : BaseSystem
 	{
 		public override void OnCreate(IArchetypeProvider archetypeProvider)

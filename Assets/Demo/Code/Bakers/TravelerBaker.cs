@@ -6,6 +6,12 @@ using Random = UnityEngine.Random;
 
 namespace ECSSample.Components
 {
+	/// <summary>
+	/// Baker responsible for initializing a Traveler entity.
+	/// - Bakes the <see cref="Traveler"/> and <see cref="Movement"/> components with random speed and direction.
+	/// - Caches <see cref="MeshRenderer"/> references into the <see cref="EcsMeshRenderers"/> component to avoid expensive Unity API calls during system updates.
+	/// - Bridges pointer clicks via <see cref="IPointerClickHandler"/> into the ECS by adding a <see cref="Clicked"/> component during the <see cref="InputDetectorSystem"/> update.
+	/// </summary>
 	public class TravelerBaker : Baker, IPointerClickHandler, ISystemNode<InputDetectorSystem>
 	{
 		private bool _wasClicked;
@@ -33,23 +39,18 @@ namespace ECSSample.Components
 			// A cache to avoid calling GetComponents inside systems
 			componentManager.AddComponent(
 				entity,
-				new ECSMeshRenderers
+				new EcsMeshRenderers
 				{
 					MeshRenderers = GetComponentsInChildren<MeshRenderer>()
 				});
 		}
 
-		public void OnPointerClick(PointerEventData eventData)
+		void IPointerClickHandler.OnPointerClick(PointerEventData eventData)
 		{
 			_wasClicked = true;
 		}
 
-		public GameObject GetGameObject()
-		{
-			return gameObject;
-		}
-
-		public void EcsUpdate(
+		void ISystemNode.EcsUpdate(
 			float deltaTime,
 			Entity entity,
 			IComponentGetter componentManager,

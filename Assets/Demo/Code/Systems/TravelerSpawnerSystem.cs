@@ -5,7 +5,7 @@ using UnityEngine;
 namespace ECSSample.Systems
 {
 	/// <summary>
-	/// Handles click on UI buttons to spawn travelers
+	/// Detects <see cref="Clicked"/> events on <see cref="AddTravelerButton"/> components and spawns new traveler entities from a prefab.
 	/// </summary>
 	public class TravelerSpawnerSystem : BaseSystem
 	{

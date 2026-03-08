@@ -4,6 +4,10 @@ using UnityEngine;
 
 namespace ECSSample.Components
 {
+	/// <summary>
+	/// Baker responsible for providing a reference to the Entity Counter UI text.
+	/// - Bakes the <see cref="EntityCounter"/> component with a reference to a <see cref="TextMeshProUGUI"/> field.
+	/// </summary>
 	public class EntityCounterBaker : Baker
 	{
 		[SerializeField]

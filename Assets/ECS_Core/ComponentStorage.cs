@@ -2,6 +2,12 @@ using System;
 
 namespace Beneton.ECS.Core
 {
+	/// <summary>
+	/// Provides type-specific storage for components of type <typeparamref name="T"/>.
+	/// - Utilizes a Sparse Set for efficient component access, insertion, and removal
+	/// - Supports fast iteration over component data via ReadOnlySpan
+	/// - Integrates with the ComponentManager to handle entity data lifecycle.
+	/// </summary>
 	public class ComponentStorage<T> : IComponentStorage where T : struct, IComponent
 	{
 		// Key is Entity.Id
