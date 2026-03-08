@@ -1,12 +1,14 @@
 using Beneton.ECS.Core;
 using ECSSample.Components;
+using UnityEngine;
 
 namespace ECSSample.Systems
 {
 	/// <summary>
-	/// Updates traveler positions based on their <see cref="Movement"/> data and increments total distance in the <see cref="TravelLog"/>.
+	/// Manages the movement of travelers: updates positions, increments travel distance, 
+	/// and handles transition from <see cref="Moving"/> to <see cref="Resting"/> when duration expires.
 	/// </summary>
-	public class MoveSystem : BaseSystem
+	public class MovingSystem : BaseSystem
 	{
 		private Archetype _moving;
 
@@ -28,6 +30,26 @@ namespace ECSSample.Systems
 
 			foreach (var entity in componentManager.GetEntities(_moving))
 			{
+				// Update timer and handle transition
+				var moving = componentManager.GetComponent<Moving>(entity);
+				moving.Duration -= deltaTime;
+
+				if (moving.Duration <= 0)
+				{
+					commandBuffer.RemoveComponent<Moving>(entity);
+					commandBuffer.AddComponent(
+						entity,
+						new Resting
+						{
+							Duration = Random.Range(1f, 3f)
+						});
+					commandBuffer.AddComponent(entity, new StartedResting());
+					continue;
+				}
+
+				commandBuffer.UpdateComponent(entity, moving);
+
+				// Physical movement
 				var movement = componentManager.GetComponent<Movement>(entity);
 				var transform = movement.Transform;
 				var position = transform.position;

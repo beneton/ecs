@@ -35,8 +35,10 @@ namespace ECSSample
 			_world.AddSystem<InputDetectorSystem>();
 
 			// Movement
-			_world.AddSystem<MoveDirectionSelectorSystem>();
-			_world.AddSystem<MoveSystem>();
+			_world.AddSystem<MovementStateCleanupSystem>();
+			_world.AddSystem<TravelerInitializationSystem>();
+			_world.AddSystem<RestingSystem>();
+			_world.AddSystem<MovingSystem>();
 			_world.AddSystem(new MovementFeedbackSystem(_restingMaterial, _movingMaterial));
 
 			// Spawn
