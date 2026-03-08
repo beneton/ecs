@@ -157,7 +157,7 @@ namespace Beneton.ECS.Core
 				baker.Bake(entity, ComponentManager, this);
 			}
 
-			var allNodes = instance.GetComponentsInChildren<IDistributedNode>();
+			var allNodes = instance.GetComponentsInChildren<ISystemNode>();
 			foreach (var node in allNodes)
 			{
 				foreach (var pair in _systems.Values)

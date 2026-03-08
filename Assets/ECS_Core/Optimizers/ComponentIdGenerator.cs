@@ -41,10 +41,13 @@ namespace Beneton.ECS.Core.CodeGen
 		private const string OutputFileName = "ComponentIds.g.cs";
 
 		public static readonly string CoreNamespace = typeof(World).Namespace;
-		
+
 		// Explicit types of Components to search for
-		public const string ComponentType = nameof(IComponent);
-		public const string SingletonComponentType = nameof(ISingletonComponent);
+		public static readonly string[] ComponentTypes =
+		{
+			nameof(IComponent),
+			nameof(ISingletonComponent)
+		};
 
 		private const string IdProviderClass = nameof(ComponentTypeIdProvider);
 		private const string IdProviderMethod = nameof(ComponentTypeIdProvider.Next);
@@ -181,22 +184,18 @@ namespace Beneton.ECS.Core.CodeGen
 					var name = m.Groups[1].Value.Trim();
 					var bases = m.Groups["bases"].Value.Trim();
 
-					if (ImplementsTargetInterface(
-							bases,
-							usings,
-							ComponentIdGenerator.ComponentType)
-						||
-						ImplementsTargetInterface(
-							bases,
-							usings,
-							ComponentIdGenerator.SingletonComponentType))
+					foreach (var componentType in ComponentIdGenerator.ComponentTypes)
 					{
-						result.Add(
-							new ComponentDeclaration
-							{
-								Namespace = ns,
-								Name = name
-							});
+						if (ImplementsTargetInterface(bases, usings, componentType))
+						{
+							result.Add(
+								new ComponentDeclaration
+								{
+									Namespace = ns,
+									Name = name
+								});
+							break;
+						}
 					}
 				}
 			}

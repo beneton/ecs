@@ -33,7 +33,7 @@ namespace ECSSample
 
 			// Movement
 			var inputDetectorSystem = _world.AddSystem<InputDetectorSystem>();
-			FindComponentAndCall<IDistributedNode<InputDetectorSystem>>(node =>
+			FindComponentAndCall<ISystemNode<InputDetectorSystem>>(node =>
 			{
 				var entity = _world.GetOrCreateEntity(node.GetGameObject());
 				inputDetectorSystem.RegisterNode(node, entity);

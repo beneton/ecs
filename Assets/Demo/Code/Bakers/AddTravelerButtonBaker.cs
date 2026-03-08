@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace ECSSample.Components
 {
-	public class AddTravelerButtonBaker : Baker, IDistributedNode<InputDetectorSystem>
+	public class AddTravelerButtonBaker : Baker, ISystemNode<InputDetectorSystem>
 	{
 		[SerializeField]
 		private Button _button;

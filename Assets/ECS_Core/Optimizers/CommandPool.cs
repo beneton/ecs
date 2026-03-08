@@ -9,7 +9,7 @@ namespace Beneton.ECS.Core
 
 		private int _availableCount;
 
-		public CommandPool(Func<T> factory, int initialCapacity = 10)
+		public CommandPool(Func<T> factory, int initialCapacity = 8)
 		{
 			_items = new T[initialCapacity];
 			_factory = factory;

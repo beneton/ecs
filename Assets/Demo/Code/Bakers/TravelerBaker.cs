@@ -6,7 +6,7 @@ using Random = UnityEngine.Random;
 
 namespace ECSSample.Components
 {
-	public class TravelerBaker : Baker, IPointerClickHandler, IDistributedNode<InputDetectorSystem>
+	public class TravelerBaker : Baker, IPointerClickHandler, ISystemNode<InputDetectorSystem>
 	{
 		private bool _wasClicked;
 

@@ -1,45 +1,14 @@
 ﻿using System;
-using UnityEngine;
 
 namespace Beneton.ECS.Core
 {
-	public interface IDistributedNode
-	{
-		Type SystemType { get; }
-
-		GameObject GetGameObject();
-
-		void EcsUpdate(
-			float deltaTime,
-			Entity entity,
-			IComponentGetter componentManager,
-			ICommandBuffer commandBuffer,
-			IWorld world);
-	}
-
-	public interface IDistributedNode<T> : IDistributedNode where T : BaseSystem
-	{
-		Type IDistributedNode.SystemType => typeof(T);
-	}
-
-	public interface IDistributedSystem
-	{
-		Type SystemType { get; }
-		void UnregisterNode(Entity entity);
-		void RegisterNode(IDistributedNode node, Entity entity);
-	}
-
-	public interface IDistributedSystem<T> : IDistributedSystem where T : BaseSystem
-	{
-	}
-
-	public abstract class DistributedSystem<T> : BaseSystem, IDistributedSystem<T>
+	public abstract class DistributedSystem<T> : BaseSystem, IDistributedSystem
 		where T : BaseSystem
 	{
 		protected struct NodeEntityPair
 		{
 			public Entity Entity;
-			public IDistributedNode Node;
+			public ISystemNode Node;
 		}
 
 		public Type SystemType => typeof(T);
@@ -47,7 +16,7 @@ namespace Beneton.ECS.Core
 		protected readonly SparseSet<NodeEntityPair> NodePairs = new();
 		private int _nodeId = 1;
 
-		public void RegisterNode(IDistributedNode node, Entity entity)
+		public void RegisterNode(ISystemNode node, Entity entity)
 		{
 			NodePairs.Set(
 				_nodeId,
