@@ -26,9 +26,9 @@ namespace Beneton.ECS.Core
 
 		// Key is Entity.Id
 		private readonly SparseSet<Entity> _modifiedEntities = new();
-
+#if UNITY_EDITOR
 		private ITimelineHandler _timelineHandler;
-
+#endif
 		private readonly World _world;
 		private int _archetypeId = 1;
 
@@ -48,10 +48,12 @@ namespace Beneton.ECS.Core
 #endif
 		}
 
+#if UNITY_EDITOR
 		internal void SetTimelineHandler(ITimelineHandler timelineHandler)
 		{
 			_timelineHandler = timelineHandler;
 		}
+#endif
 
 		public Archetype GetOrCreateArchetype(int[] required)
 		{
@@ -140,7 +142,13 @@ namespace Beneton.ECS.Core
 				return;
 			}
 
-			_timelineHandler?.RegisterAddComponent(entity, typeId);
+#if UNITY_EDITOR
+			if (_timelineHandler != null)
+			{
+				_world.TryGetGameObject(entity, out var gameObject);
+				_timelineHandler.RegisterAddComponent(entity, gameObject.name, typeId);
+			}
+#endif
 
 			typedStorage.Set(entity, component);
 			_modifiedEntities.Set(entity, entity);
@@ -171,7 +179,13 @@ namespace Beneton.ECS.Core
 				return;
 			}
 
-			_timelineHandler?.RegisterUpdateComponent(entity, typeId);
+#if UNITY_EDITOR
+			if (_timelineHandler != null)
+			{
+				_world.TryGetGameObject(entity, out var gameObject);
+				_timelineHandler.RegisterUpdateComponent(entity, gameObject.name, typeId);
+			}
+#endif
 
 			typedStorage.Set(entity, component);
 		}
@@ -217,7 +231,14 @@ namespace Beneton.ECS.Core
 
 			_modifiedEntities.Set(entity, entity);
 
-			_timelineHandler?.RegisterRemoveAllComponent(entity);
+#if UNITY_EDITOR
+			if (_timelineHandler != null)
+			{
+				_world.TryGetGameObject(entity, out var gameObject);
+				_timelineHandler.RegisterRemoveAllComponent(entity, gameObject.name);
+			}
+#endif
+
 			UpdateArchetypes(entity);
 		}
 
@@ -241,7 +262,13 @@ namespace Beneton.ECS.Core
 
 			if (TryGetTypedStorage<T>(out var typedStorage))
 			{
-				_timelineHandler?.RegisterRemoveComponent(entity, typeId);
+#if UNITY_EDITOR
+				if (_timelineHandler != null)
+				{
+					_world.TryGetGameObject(entity, out var gameObject);
+					_timelineHandler.RegisterRemoveComponent(entity, gameObject.name, typeId);
+				}
+#endif
 
 				typedStorage.Remove(entity);
 				_modifiedEntities.Set(entity, entity);
