@@ -14,17 +14,16 @@
 		public string EntityName;
 		public int ComponentId;
 		public string ComponentName;
+		public string CallerName;
 		public TimelineEventType Type;
-		public int FrameCount;
-		public float Realtime;
-		public string FormattedMessage;
+		public string FormattedTiming;
 	}
 
 	public interface ITimelineHandler
 	{
-		void RegisterAddComponent(Entity entity, string entityName, int componentId);
-		void RegisterUpdateComponent(Entity entity, string entityName, int componentId);
-		void RegisterRemoveComponent(Entity entity, string entityName, int componentId);
-		void RegisterRemoveAllComponent(Entity entity, string entityName);
+		void RegisterAddComponent(Entity entity, string entityName, int componentId, string caller);
+		void RegisterUpdateComponent(Entity entity, string entityName, int componentId, string caller);
+		void RegisterRemoveComponent(Entity entity, string entityName, int componentId, string caller);
+		void RegisterRemoveAllComponent(Entity entity, string entityName, string caller);
 	}
 }

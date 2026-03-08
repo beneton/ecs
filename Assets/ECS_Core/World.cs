@@ -88,7 +88,13 @@ namespace Beneton.ECS.Core
 		public void Bake(Baker baker)
 		{
 			var entity = GetOrCreateEntity(baker.gameObject);
+#if UNITY_EDITOR
+			_componentManager.CurrentExecutingBaker = baker.GetType().Name;
+#endif
 			baker.Bake(entity, _componentManager, this);
+#if UNITY_EDITOR
+			_componentManager.CurrentExecutingBaker = string.Empty;
+#endif
 		}
 
 		public Entity CreateEntity(string entityName)
@@ -169,8 +175,14 @@ namespace Beneton.ECS.Core
 			var bakers = instance.GetComponentsInChildren<Baker>(false);
 			foreach (var baker in bakers)
 			{
+#if UNITY_EDITOR
+				_componentManager.CurrentExecutingBaker = baker.GetType().Name;
+#endif
 				baker.Bake(entity, _componentManager, this);
 			}
+#if UNITY_EDITOR
+			_componentManager.CurrentExecutingBaker = string.Empty;
+#endif
 
 			// Register any SystemNode present on the Instance
 			var allNodes = instance.GetComponentsInChildren<ISystemNode>();
@@ -249,6 +261,9 @@ namespace Beneton.ECS.Core
 		{
 			foreach (var pair in _systems.Values)
 			{
+#if UNITY_EDITOR
+				_componentManager.CurrentExecutingSystem = pair.System.GetType().Name;
+#endif
 				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
 				pair.CommandBuffer.Execute(_componentManager);
 			}
@@ -258,6 +273,9 @@ namespace Beneton.ECS.Core
 		{
 			foreach (var pair in _lateSystems.Values)
 			{
+#if UNITY_EDITOR
+				_componentManager.CurrentExecutingSystem = pair.System.GetType().Name;
+#endif
 				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
 				pair.CommandBuffer.Execute(_componentManager);
 			}

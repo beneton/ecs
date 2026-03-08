@@ -26,7 +26,10 @@ namespace Beneton.ECS.Core
 
 		// Key is Entity.Id
 		private readonly SparseSet<Entity> _modifiedEntities = new();
+
 #if UNITY_EDITOR
+		public string CurrentExecutingBaker = string.Empty;
+		public string CurrentExecutingSystem = string.Empty;
 		private ITimelineHandler _timelineHandler;
 #endif
 		private readonly World _world;
@@ -146,7 +149,26 @@ namespace Beneton.ECS.Core
 			if (_timelineHandler != null)
 			{
 				_world.TryGetGameObject(entity, out var gameObject);
-				_timelineHandler.RegisterAddComponent(entity, gameObject.name, typeId);
+				var caller = "Unknown";
+				if (!string.IsNullOrEmpty(CurrentExecutingBaker) &&
+					!string.IsNullOrEmpty(CurrentExecutingSystem))
+				{
+					caller = $"{CurrentExecutingSystem} | {CurrentExecutingBaker}";
+				}
+				else if (!string.IsNullOrEmpty(CurrentExecutingSystem))
+				{
+					caller = CurrentExecutingSystem;
+				}
+				else if (!string.IsNullOrEmpty(CurrentExecutingBaker))
+				{
+					caller = CurrentExecutingBaker;
+				}
+
+				_timelineHandler.RegisterAddComponent(
+					entity,
+					gameObject.name,
+					typeId,
+					caller);
 			}
 #endif
 
@@ -183,7 +205,11 @@ namespace Beneton.ECS.Core
 			if (_timelineHandler != null)
 			{
 				_world.TryGetGameObject(entity, out var gameObject);
-				_timelineHandler.RegisterUpdateComponent(entity, gameObject.name, typeId);
+				_timelineHandler.RegisterUpdateComponent(
+					entity,
+					gameObject.name,
+					typeId,
+					CurrentExecutingSystem);
 			}
 #endif
 
@@ -235,7 +261,10 @@ namespace Beneton.ECS.Core
 			if (_timelineHandler != null)
 			{
 				_world.TryGetGameObject(entity, out var gameObject);
-				_timelineHandler.RegisterRemoveAllComponent(entity, gameObject.name);
+				_timelineHandler.RegisterRemoveAllComponent(
+					entity,
+					gameObject.name,
+					CurrentExecutingSystem);
 			}
 #endif
 
@@ -266,7 +295,11 @@ namespace Beneton.ECS.Core
 				if (_timelineHandler != null)
 				{
 					_world.TryGetGameObject(entity, out var gameObject);
-					_timelineHandler.RegisterRemoveComponent(entity, gameObject.name, typeId);
+					_timelineHandler.RegisterRemoveComponent(
+						entity,
+						gameObject.name,
+						typeId,
+						CurrentExecutingSystem);
 				}
 #endif
 

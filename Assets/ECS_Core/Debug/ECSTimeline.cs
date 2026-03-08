@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Beneton.ECS.Core.Editor
 {
@@ -30,20 +32,20 @@ namespace Beneton.ECS.Core.Editor
 			}
 		}
 
-		private Vector2 _scrollPosition = Vector2.zero;
-		private Rect _scrollViewRect;
-		private Rect _lastContentRect;
 		private bool _isActive = true;
 
 		// Filtering
 		private string _entityFilter = string.Empty;
 		private string _componentFilter = string.Empty;
+		private string _systemFilter = string.Empty;
+		private string _systemExcludeFilter = string.Empty;
 		private bool _showAdd = true;
 		private bool _showUpdate = true;
 		private bool _showRemove = true;
 
-		private const int MaxEvents = 1000;
+		private const int MaxEvents = 10000;
 		private readonly List<TimelineEvent> _eventEntries = new();
+		private readonly List<TimelineEvent> _filteredEntries = new();
 		private bool _autoScroll = true;
 
 		private ECSDebugRef _ecsDebugRef;
@@ -61,10 +63,245 @@ namespace Beneton.ECS.Core.Editor
 			}
 		}
 
+		// UI Toolkit Elements
+		private MultiColumnListView _listView;
+		private VisualElement _filterSection;
+		private VisualElement _notPlayingLabel;
+
 		[MenuItem("Debug/ECS Timeline")]
 		public static void ShowWindow()
 		{
 			GetWindow<EcsTimeline>("ECS Timeline");
+		}
+
+		public void CreateGUI()
+		{
+			var root = rootVisualElement;
+
+			// Toolbar
+			var toolbar = new Toolbar
+			{
+				style = { flexShrink = 0 }
+			};
+
+			var activeToggle = new ToolbarToggle { text = "Active", value = _isActive };
+			activeToggle.RegisterValueChangedCallback(evt => _isActive = evt.newValue);
+			toolbar.Add(activeToggle);
+
+			var autoScrollToggle = new ToolbarToggle { text = "Auto-Scroll", value = _autoScroll };
+			autoScrollToggle.RegisterValueChangedCallback(evt =>
+			{
+				_autoScroll = evt.newValue;
+				if (_autoScroll)
+				{
+					ScrollToBottom();
+				}
+			});
+			toolbar.Add(autoScrollToggle);
+
+			var clearButton = new ToolbarButton(() => { _eventEntries.Clear(); })
+				{ text = "Clear" };
+			toolbar.Add(clearButton);
+
+			var exportButton = new ToolbarButton(ExportLogs) { text = "Export" };
+			toolbar.Add(exportButton);
+
+			root.Add(toolbar);
+
+			// Filters
+			_filterSection = new VisualElement
+			{
+				style =
+				{
+					paddingLeft = 4,
+					paddingRight = 4,
+					paddingTop = 4,
+					paddingBottom = 4,
+					flexShrink = 0
+				}
+			};
+			_filterSection.AddToClassList("help-box");
+
+			// Row 1: Entity & Component
+			var row1 = new VisualElement
+				{ style = { flexDirection = FlexDirection.Row, marginBottom = 2 } };
+			var entityField = new TextField("Entity")
+				{ value = _entityFilter, style = { flexGrow = 1 } };
+			entityField.labelElement.style.minWidth = 50;
+			entityField.RegisterValueChangedCallback(evt => { _entityFilter = evt.newValue; });
+			row1.Add(entityField);
+
+			var componentField = new TextField("Component")
+				{ value = _componentFilter, style = { flexGrow = 1, marginLeft = 10 } };
+			componentField.labelElement.style.minWidth = 70;
+			componentField.RegisterValueChangedCallback(evt =>
+			{
+				_componentFilter = evt.newValue;
+			});
+			row1.Add(componentField);
+			_filterSection.Add(row1);
+
+			// Row 2: System & Exclude
+			var row2 = new VisualElement
+				{ style = { flexDirection = FlexDirection.Row, marginBottom = 2 } };
+			var systemField = new TextField("System")
+				{ value = _systemFilter, style = { flexGrow = 1 } };
+			systemField.labelElement.style.minWidth = 50;
+			systemField.RegisterValueChangedCallback(evt => { _systemFilter = evt.newValue; });
+			row2.Add(systemField);
+
+			var excludeField = new TextField("Exclude")
+				{ value = _systemExcludeFilter, style = { flexGrow = 1, marginLeft = 10 } };
+			excludeField.labelElement.style.minWidth = 70;
+			excludeField.RegisterValueChangedCallback(evt =>
+			{
+				_systemExcludeFilter = evt.newValue;
+			});
+			row2.Add(excludeField);
+			_filterSection.Add(row2);
+
+			// Row 3: Types & Reset
+			var row3 = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+			row3.Add(
+				new Label("Types:")
+					{ style = { minWidth = 50, unityTextAlign = TextAnchor.MiddleLeft } });
+
+			var addToggle = new ToolbarToggle { text = "Added", value = _showAdd };
+			addToggle.RegisterValueChangedCallback(evt => { _showAdd = evt.newValue; });
+			row3.Add(addToggle);
+
+			var updToggle = new ToolbarToggle { text = "Updated", value = _showUpdate };
+			updToggle.RegisterValueChangedCallback(evt => { _showUpdate = evt.newValue; });
+			row3.Add(updToggle);
+
+			var remToggle = new ToolbarToggle { text = "Removed", value = _showRemove };
+			remToggle.RegisterValueChangedCallback(evt => { _showRemove = evt.newValue; });
+			row3.Add(remToggle);
+
+			row3.Add(new VisualElement { style = { flexGrow = 1 } });
+
+			var resetButton = new Button(() =>
+			{
+				_entityFilter = string.Empty;
+				_componentFilter = string.Empty;
+				_systemFilter = string.Empty;
+				_systemExcludeFilter = string.Empty;
+				entityField.SetValueWithoutNotify(string.Empty);
+				componentField.SetValueWithoutNotify(string.Empty);
+				systemField.SetValueWithoutNotify(string.Empty);
+				excludeField.SetValueWithoutNotify(string.Empty);
+			})
+			{
+				text = "Reset Filters",
+				style = { width = 100 }
+			};
+
+			row3.Add(resetButton);
+			_filterSection.Add(row3);
+
+			root.Add(_filterSection);
+
+			// List View
+			_listView = new MultiColumnListView
+			{
+				itemsSource = _filteredEntries,
+				fixedItemHeight = 24,
+				showAlternatingRowBackgrounds = AlternatingRowBackground.All,
+				reorderable = false,
+				showBoundCollectionSize = false,
+				style = { flexGrow = 1 }
+			};
+
+			// Columns
+			_listView.columns.Add(
+				new Column
+				{
+					makeCell = () => new Label(),
+					bindCell = (element, index) =>
+					{
+						var ev = _filteredEntries[index];
+						(element as Label)!.text = ev.FormattedTiming;
+					},
+					title = "Frame (Time)",
+					width = 110
+				});
+
+			_listView.columns.Add(
+				new Column
+				{
+					makeCell = () => new Label
+					{
+						style =
+						{
+							unityTextAlign = TextAnchor.MiddleCenter,
+							unityFontStyleAndWeight = FontStyle.Bold
+						}
+					},
+					bindCell = (element, index) =>
+					{
+						var ev = _filteredEntries[index];
+						var label = element as Label;
+						label!.text = GetTypeShorthand(ev.Type);
+						label.style.color = GetTypeColor(ev.Type);
+					},
+					title = "Type",
+					width = 120
+				});
+
+			_listView.columns.Add(
+				new Column
+				{
+					makeCell = () => new Label(),
+					bindCell = (element, index) =>
+					{
+						var ev = _filteredEntries[index];
+						(element as Label)!.text = ev.EntityName;
+					},
+					title = "Entity",
+					width = 150
+				});
+
+			_listView.columns.Add(
+				new Column
+				{
+					makeCell = () => new Label(),
+					bindCell = (element, index) =>
+					{
+						var ev = _filteredEntries[index];
+						(element as Label)!.text = ev.ComponentName;
+					},
+					title = "Component",
+					width = 150
+				});
+
+			_listView.columns.Add(
+				new Column
+				{
+					makeCell = () => new Label(),
+					bindCell = (element, index) =>
+					{
+						var ev = _filteredEntries[index];
+						(element as Label)!.text = ev.CallerName;
+					},
+					title = "Caller",
+					width = 200,
+					stretchable = true
+				});
+
+			root.Add(_listView);
+
+			_notPlayingLabel = new Label("Only works in play mode")
+			{
+				style =
+				{
+					unityTextAlign = TextAnchor.MiddleCenter,
+					flexGrow = 1,
+					fontSize = 20
+				}
+			};
+			root.Add(_notPlayingLabel);
+
+			RefreshVisibility();
 		}
 
 		private void OnEnable()
@@ -79,124 +316,95 @@ namespace Beneton.ECS.Core.Editor
 
 		private void OnEditorUpdate()
 		{
-			Repaint();
+			RefreshVisibility();
+
+			if (Application.isPlaying && ECSDebugRef != null)
+			{
+				UpdateFilteredList();
+				if (ECSDebugRef.ComponentManager != null)
+				{
+					ECSDebugRef.ComponentManager.SetTimelineHandler(this);
+				}
+			}
 		}
 
-		private void OnGUI()
+		private void RefreshVisibility()
 		{
-			DrawToolbar();
-
-			if (!Application.isPlaying)
+			var isPlaying = Application.isPlaying;
+			if (_filterSection != null)
 			{
-				EditorGUILayout.LabelField("Only works in play mode");
+				_filterSection.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
+			}
+
+			if (_listView != null)
+			{
+				_listView.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
+			}
+
+			if (_notPlayingLabel != null)
+			{
+				_notPlayingLabel.style.display = isPlaying ? DisplayStyle.None : DisplayStyle.Flex;
+			}
+
+			if (!isPlaying && _eventEntries.Count > 0)
+			{
 				_eventEntries.Clear();
-				_lastContentRect = new Rect();
-				_scrollViewRect = new Rect();
-				_ecsDebugRef = null;
-				_componentNames = null;
-				return;
+				_filteredEntries.Clear();
+				_listView?.Rebuild();
 			}
+		}
 
-			DrawFilters();
-
-			var richTextStyle = new GUIStyle(EditorStyles.label)
+		private string GetTypeShorthand(TimelineEventType type)
+		{
+			return type switch
 			{
-				richText = true
+				TimelineEventType.AddComponent => "Added",
+				TimelineEventType.UpdateComponent => "Updated",
+				TimelineEventType.RemoveComponent => "Removed",
+				TimelineEventType.RemoveAllComponents => "Removed all",
+				_ => type.ToString()
 			};
-
-			if (ECSDebugRef != null && ECSDebugRef.ComponentManager != null)
-			{
-				ECSDebugRef.ComponentManager.SetTimelineHandler(this);
-			}
-
-			_scrollPosition = GUILayout.BeginScrollView(_scrollPosition);
-			{
-				foreach (var eventEntry in _eventEntries)
-				{
-					if (!PassesFilter(eventEntry))
-					{
-						continue;
-					}
-
-					EditorGUILayout.BeginHorizontal();
-					{
-						var timestamp = $"[{eventEntry.FrameCount}] ({eventEntry.Realtime:F2}s)";
-						GUILayout.Label(timestamp, GUILayout.Width(120));
-
-						if (GUILayout.Button(eventEntry.FormattedMessage, richTextStyle))
-						{
-							OnEventClicked(eventEntry);
-						}
-
-						if (GUILayout.Button("Inspect", GUILayout.Width(60)))
-						{
-							InspectEntity(eventEntry.EntityId);
-						}
-					}
-					EditorGUILayout.EndHorizontal();
-
-					_lastContentRect = GUILayoutUtility.GetLastRect();
-				}
-
-				if (_autoScroll && Event.current.type == EventType.Repaint)
-				{
-					var viewportSize = _scrollViewRect.height;
-					var contentSize = _lastContentRect.y + _lastContentRect.height;
-					if (contentSize > viewportSize)
-					{
-						_scrollPosition.y = contentSize;
-					}
-				}
-			}
-			GUILayout.EndScrollView();
-			_scrollViewRect = GUILayoutUtility.GetLastRect();
 		}
 
-		private void DrawToolbar()
+		private Color GetTypeColor(TimelineEventType type)
 		{
-			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+			return type switch
 			{
-				_isActive = GUILayout.Toggle(_isActive, "Active", EditorStyles.toolbarButton);
-				_autoScroll = GUILayout.Toggle(
-					_autoScroll,
-					"Auto-Scroll",
-					EditorStyles.toolbarButton);
-
-				if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
-				{
-					_eventEntries.Clear();
-				}
-
-				if (GUILayout.Button("Export", EditorStyles.toolbarButton))
-				{
-					ExportLogs();
-				}
-			}
-			EditorGUILayout.EndHorizontal();
+				TimelineEventType.AddComponent => new Color(0.36f, 1f, 0.36f),
+				TimelineEventType.UpdateComponent => new Color(1f, 1f, 0.35f),
+				TimelineEventType.RemoveComponent => new Color(1f, 0.35f, 0.42f),
+				TimelineEventType.RemoveAllComponents => new Color(1f, 0.35f, 0.42f),
+				_ => Color.white
+			};
 		}
 
-		private void DrawFilters()
+		private void UpdateFilteredList()
 		{
-			EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+			_filteredEntries.Clear();
+			foreach (var ev in _eventEntries)
 			{
-				EditorGUILayout.BeginHorizontal();
+				if (PassesFilter(ev))
 				{
-					EditorGUILayout.LabelField("Filters:", GUILayout.Width(50));
-					_entityFilter = EditorGUILayout.TextField("Entity Name/ID", _entityFilter);
-					_componentFilter = EditorGUILayout.TextField("Component", _componentFilter);
+					_filteredEntries.Add(ev);
 				}
-				EditorGUILayout.EndHorizontal();
-
-				EditorGUILayout.BeginHorizontal();
-				{
-					GUILayout.Space(55);
-					_showAdd = GUILayout.Toggle(_showAdd, "Adding", GUILayout.Width(70));
-					_showUpdate = GUILayout.Toggle(_showUpdate, "Updating", GUILayout.Width(80));
-					_showRemove = GUILayout.Toggle(_showRemove, "Removing", GUILayout.Width(80));
-				}
-				EditorGUILayout.EndHorizontal();
 			}
-			EditorGUILayout.EndVertical();
+
+			if (_listView != null)
+			{
+				_listView.Rebuild();
+				if (_autoScroll)
+				{
+					ScrollToBottom();
+				}
+			}
+		}
+
+		private void ScrollToBottom()
+		{
+			if (_filteredEntries.Count > 0)
+			{
+				_listView.ScrollToItem(_filteredEntries.Count - 1);
+			}
 		}
 
 		private bool PassesFilter(TimelineEvent ev)
@@ -234,27 +442,58 @@ namespace Beneton.ECS.Core.Editor
 				}
 			}
 
+			if (!string.IsNullOrEmpty(_systemFilter))
+			{
+				if (ev.CallerName == null)
+				{
+					return false;
+				}
+
+				var filters = _systemFilter.Split(new[] { ',', ';' });
+				var match = false;
+				foreach (var filter in filters)
+				{
+					var trimmed = filter.Trim();
+					if (string.IsNullOrEmpty(trimmed))
+					{
+						continue;
+					}
+
+					if (ev.CallerName.Contains(trimmed))
+					{
+						match = true;
+						break;
+					}
+				}
+
+				if (!match)
+				{
+					return false;
+				}
+			}
+
+			if (!string.IsNullOrEmpty(_systemExcludeFilter))
+			{
+				if (ev.CallerName != null)
+				{
+					var filters = _systemExcludeFilter.Split(new[] { ',', ';' });
+					foreach (var filter in filters)
+					{
+						var trimmed = filter.Trim();
+						if (string.IsNullOrEmpty(trimmed))
+						{
+							continue;
+						}
+
+						if (ev.CallerName.Contains(trimmed))
+						{
+							return false;
+						}
+					}
+				}
+			}
+
 			return true;
-		}
-
-		private void OnEventClicked(TimelineEvent ev)
-		{
-			var world = ECSDebugRef.World;
-			if (world.TryGetGameObject(new Entity(ev.EntityId), out var gameObject))
-			{
-				EditorGUIUtility.PingObject(gameObject);
-				Selection.activeGameObject = gameObject;
-			}
-		}
-
-		private void InspectEntity(int entityId)
-		{
-			var world = ECSDebugRef.World;
-			if (world.TryGetGameObject(new Entity(entityId), out var gameObject))
-			{
-				Selection.activeGameObject = gameObject;
-				EntityInspector.ShowWindow();
-			}
 		}
 
 		private void ExportLogs()
@@ -270,12 +509,16 @@ namespace Beneton.ECS.Core.Editor
 			}
 
 			var lines = _eventEntries.Select(e =>
-				$"[{e.FrameCount}] ({e.Realtime:F2}s) {e.Type}: Entity={e.EntityName}({e.EntityId}), Component={e.ComponentName}");
+				$"[{e.FormattedTiming}) {e.Type}: Entity={e.EntityName}, Component={e.ComponentName}, System={e.CallerName}");
 			File.WriteAllLines(path, lines);
 			Debug.Log($"ECS Timeline exported to {path}");
 		}
 
-		public void RegisterAddComponent(Entity entity, string entityName, int componentId)
+		public void RegisterAddComponent(
+			Entity entity,
+			string entityName,
+			int componentId,
+			string caller)
 		{
 			if (!_isActive)
 			{
@@ -290,15 +533,17 @@ namespace Beneton.ECS.Core.Editor
 					EntityName = entityName,
 					ComponentId = componentId,
 					ComponentName = componentName,
+					CallerName = caller,
 					Type = TimelineEventType.AddComponent,
-					FrameCount = Time.frameCount,
-					Realtime = Time.realtimeSinceStartup,
-					FormattedMessage =
-						$"<color=#5CFF5B>Adding <b>{componentName}</b> to <b>{entityName}</b></color>"
+					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
-		public void RegisterUpdateComponent(Entity entity, string entityName, int componentId)
+		public void RegisterUpdateComponent(
+			Entity entity,
+			string entityName,
+			int componentId,
+			string caller)
 		{
 			if (!_isActive)
 			{
@@ -313,15 +558,17 @@ namespace Beneton.ECS.Core.Editor
 					EntityName = entityName,
 					ComponentId = componentId,
 					ComponentName = componentName,
+					CallerName = caller,
 					Type = TimelineEventType.UpdateComponent,
-					FrameCount = Time.frameCount,
-					Realtime = Time.realtimeSinceStartup,
-					FormattedMessage =
-						$"<color=#FFFF5A>Updating <b>{componentName}</b> in <b>{entityName}</b></color>"
+					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
-		public void RegisterRemoveComponent(Entity entity, string entityName, int componentId)
+		public void RegisterRemoveComponent(
+			Entity entity,
+			string entityName,
+			int componentId,
+			string caller)
 		{
 			if (!_isActive)
 			{
@@ -336,15 +583,13 @@ namespace Beneton.ECS.Core.Editor
 					EntityName = entityName,
 					ComponentId = componentId,
 					ComponentName = componentName,
+					CallerName = caller,
 					Type = TimelineEventType.RemoveComponent,
-					FrameCount = Time.frameCount,
-					Realtime = Time.realtimeSinceStartup,
-					FormattedMessage =
-						$"<color=#FF5A6C>Removing <b>{componentName}</b> from <b>{entityName}</b></color>"
+					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
-		public void RegisterRemoveAllComponent(Entity entity, string entityName)
+		public void RegisterRemoveAllComponent(Entity entity, string entityName, string caller)
 		{
 			if (!_isActive)
 			{
@@ -358,11 +603,9 @@ namespace Beneton.ECS.Core.Editor
 					EntityName = entityName,
 					ComponentId = -1,
 					ComponentName = "All",
+					CallerName = caller,
 					Type = TimelineEventType.RemoveAllComponents,
-					FrameCount = Time.frameCount,
-					Realtime = Time.realtimeSinceStartup,
-					FormattedMessage =
-						$"<color=#FF5A6C>Removing <b>all components</b> from <b>{entityName}</b></color>"
+					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
