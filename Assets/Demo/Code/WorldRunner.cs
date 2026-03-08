@@ -1,13 +1,14 @@
-﻿using System;
-using System.Linq;
-using Beneton.ECS.Core;
+﻿using Beneton.ECS.Core;
 using ECSSample.Systems;
 using UnityEngine;
 
 namespace ECSSample
 {
 	/// <summary>
-	/// Responsible for creating and updating the ECS World 
+	/// Responsible for:
+	/// - Create ECS World
+	/// - Register Systems, and provide dependencies to Systems
+	/// - Call update methods in the World
 	/// </summary>
 	public class WorldRunner : MonoBehaviour
 	{
@@ -31,14 +32,10 @@ namespace ECSSample
 		{
 			_world = new World();
 
-			// Movement
-			var inputDetectorSystem = _world.AddSystem<InputDetectorSystem>();
-			FindComponentAndCall<ISystemNode<InputDetectorSystem>>(node =>
-			{
-				var entity = _world.GetOrCreateEntity(node.GetGameObject());
-				inputDetectorSystem.RegisterNode(node, entity);
-			});
+			// Input
+			_world.AddSystem<InputDetectorSystem>();
 
+			// Movement
 			_world.AddSystem<MoveDirectionSelectorSystem>();
 			_world.AddSystem<MoveSystem>();
 			_world.AddSystem(new MovementFeedbackSystem(_restingMaterial, _movingMaterial));
@@ -51,16 +48,7 @@ namespace ECSSample
 			_world.AddSystem<TravelLogUpdateSystem>();
 			_world.AddSystem<EntityCounterUpdateSystem>();
 
-			var allBakers = FindObjectsByType<Baker>(
-				FindObjectsInactive.Exclude,
-				FindObjectsSortMode.None);
-
-			foreach (var baker in allBakers)
-			{
-				_world.Bake(baker);
-			}
-
-			_world.Start();
+			_world.Start(FindObjectsInactive.Exclude);
 		}
 
 		private void Update()
@@ -71,21 +59,6 @@ namespace ECSSample
 		private void LateUpdate()
 		{
 			_world.LateUpdate(Time.fixedDeltaTime);
-		}
-
-		private static void FindComponentAndCall<T>(Action<T> method)
-		{
-			var allElements = FindObjectsByType<Transform>(
-					FindObjectsInactive.Exclude,
-					FindObjectsSortMode.None)
-				.Select(m => m.GetComponent<T>())
-				.Where(i => i != null)
-				.ToArray();
-
-			foreach (var element in allElements)
-			{
-				method(element);
-			}
 		}
 	}
 }
