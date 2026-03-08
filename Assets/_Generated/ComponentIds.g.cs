@@ -3,69 +3,81 @@
 // </auto-generated>
 
 using Beneton.ECS.Core;
+using System;
 
 namespace ECSSample.Components
 {
+    [Serializable] 
     public partial struct AddTravelerButton
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct Clicked
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct EcsMeshRenderers
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct EntityCounter
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct Movement
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct Moving
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct Resting
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct StartedMoving
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct StartedResting
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct Traveler
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();
         public int TypeId => Id;
     }
 
+    [Serializable] 
     public partial struct TravelLog
     {
         public static int Id { get; } = ComponentTypeIdProvider.Next();

@@ -123,7 +123,6 @@ namespace Beneton.ECS.Core.Editor
 			_filterSection.AddToClassList("help-box");
 
 			// Filter Table Layout
-			const float fieldWidth = 150f;
 			const float labelWidth = 80f;
 
 			// Header Row
@@ -412,6 +411,9 @@ namespace Beneton.ECS.Core.Editor
 			root.Add(_notPlayingLabel);
 
 			RefreshVisibility();
+
+			// Schedule update
+			rootVisualElement.schedule.Execute(UpdateUI).Every(100);
 		}
 
 		private void OnSelectionChanged(IEnumerable<object> selection)
@@ -440,17 +442,7 @@ namespace Beneton.ECS.Core.Editor
 			}
 		}
 
-		private void OnEnable()
-		{
-			EditorApplication.update += OnEditorUpdate;
-		}
-
-		private void OnDisable()
-		{
-			EditorApplication.update -= OnEditorUpdate;
-		}
-
-		private void OnEditorUpdate()
+		private void UpdateUI()
 		{
 			RefreshVisibility();
 

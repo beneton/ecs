@@ -88,6 +88,7 @@ namespace Beneton.ECS.Core.CodeGen
 			sb.AppendLine("// </auto-generated>");
 			sb.AppendLine();
 			sb.AppendLine($"using {CoreNamespace};");
+			sb.AppendLine($"using System;");
 			sb.AppendLine();
 
 			// Group by namespace so we can emit clean blocks
@@ -107,6 +108,7 @@ namespace Beneton.ECS.Core.CodeGen
 
 				foreach (var c in group.OrderBy(c => c.Name))
 				{
+					sb.AppendLine("    [Serializable] ");
 					sb.AppendLine("    public partial struct " + c.Name);
 					sb.AppendLine("    {");
 					sb.AppendLine(
