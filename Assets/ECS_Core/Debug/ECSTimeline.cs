@@ -36,7 +36,9 @@ namespace Beneton.ECS.Core.Editor
 
 		// Filtering
 		private string _entityFilter = string.Empty;
+		private string _entityExcludeFilter = string.Empty;
 		private string _componentFilter = string.Empty;
+		private string _componentExcludeFilter = string.Empty;
 		private string _systemFilter = string.Empty;
 		private string _systemExcludeFilter = string.Empty;
 		private bool _showAdd = true;
@@ -46,7 +48,6 @@ namespace Beneton.ECS.Core.Editor
 		private const int MaxEvents = 10000;
 		private readonly List<TimelineEvent> _eventEntries = new();
 		private readonly List<TimelineEvent> _filteredEntries = new();
-		private bool _autoScroll = true;
 
 		private ECSDebugRef _ecsDebugRef;
 
@@ -88,17 +89,6 @@ namespace Beneton.ECS.Core.Editor
 			activeToggle.RegisterValueChangedCallback(evt => _isActive = evt.newValue);
 			toolbar.Add(activeToggle);
 
-			var autoScrollToggle = new ToolbarToggle { text = "Auto-Scroll", value = _autoScroll };
-			autoScrollToggle.RegisterValueChangedCallback(evt =>
-			{
-				_autoScroll = evt.newValue;
-				if (_autoScroll)
-				{
-					ScrollToBottom();
-				}
-			});
-			toolbar.Add(autoScrollToggle);
-
 			var clearButton = new ToolbarButton(() => { _eventEntries.Clear(); })
 				{ text = "Clear" };
 			toolbar.Add(clearButton);
@@ -122,72 +112,154 @@ namespace Beneton.ECS.Core.Editor
 			};
 			_filterSection.AddToClassList("help-box");
 
-			// Row 1: Entity & Component
-			var row1 = new VisualElement
-				{ style = { flexDirection = FlexDirection.Row, marginBottom = 2 } };
-			var entityField = new TextField("Entity")
-				{ value = _entityFilter, style = { flexGrow = 1 } };
-			entityField.labelElement.style.minWidth = 50;
-			entityField.RegisterValueChangedCallback(evt => { _entityFilter = evt.newValue; });
-			row1.Add(entityField);
+			// Filter Table Layout
+			const float fieldWidth = 150f;
+			const float labelWidth = 80f;
 
-			var componentField = new TextField("Component")
-				{ value = _componentFilter, style = { flexGrow = 1, marginLeft = 10 } };
-			componentField.labelElement.style.minWidth = 70;
+			// Header Row
+			var headerRow = new VisualElement
+			{
+				style =
+				{
+					flexDirection = FlexDirection.Row, marginBottom = 4, borderBottomWidth = 1,
+					borderBottomColor = Color.gray
+				}
+			};
+			headerRow.Add(
+				new Label("Filter Type")
+					{ style = { width = labelWidth, unityFontStyleAndWeight = FontStyle.Bold } });
+			headerRow.Add(
+				new Label("Show (Inclusion)")
+				{
+					style =
+					{
+						flexGrow = 1, flexBasis = 0, unityFontStyleAndWeight = FontStyle.Bold, marginLeft = 4
+					}
+				});
+			headerRow.Add(
+				new Label("Hide (Exclusion)")
+				{
+					style =
+					{
+						flexGrow = 1, flexBasis = 0, unityFontStyleAndWeight = FontStyle.Bold,
+						marginLeft = 10
+					}
+				});
+			_filterSection.Add(headerRow);
+
+			// Entity Row
+			var entityRow = new VisualElement
+				{ style = { flexDirection = FlexDirection.Row, marginBottom = 2 } };
+			entityRow.Add(
+				new Label("Entity")
+					{ style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft } });
+
+			var entityField = new TextField
+				{ value = _entityFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 } };
+			entityField.tooltip = "Filter by Entity Name/ID (comma/semicolon separated)";
+			entityField.RegisterValueChangedCallback(evt => { _entityFilter = evt.newValue; });
+			entityRow.Add(entityField);
+
+			var entityExcludeField = new TextField
+				{ value = _entityExcludeFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 } };
+			entityExcludeField.tooltip = "Exclude by Entity Name/ID (comma/semicolon separated)";
+			entityExcludeField.RegisterValueChangedCallback(evt =>
+			{
+				_entityExcludeFilter = evt.newValue;
+			});
+			entityRow.Add(entityExcludeField);
+
+			_filterSection.Add(entityRow);
+
+			// Component Row
+			var componentRow = new VisualElement
+				{ style = { flexDirection = FlexDirection.Row, marginBottom = 2 } };
+			componentRow.Add(
+				new Label("Component")
+					{ style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft } });
+
+			var componentField = new TextField
+				{ value = _componentFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 } };
+			componentField.tooltip = "Filter by component names (comma/semicolon separated)";
 			componentField.RegisterValueChangedCallback(evt =>
 			{
 				_componentFilter = evt.newValue;
 			});
-			row1.Add(componentField);
-			_filterSection.Add(row1);
+			componentRow.Add(componentField);
 
-			// Row 2: System & Exclude
-			var row2 = new VisualElement
-				{ style = { flexDirection = FlexDirection.Row, marginBottom = 2 } };
-			var systemField = new TextField("System")
-				{ value = _systemFilter, style = { flexGrow = 1 } };
-			systemField.labelElement.style.minWidth = 50;
+			var componentExcludeField = new TextField
+			{
+				value = _componentExcludeFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 }
+			};
+			componentExcludeField.tooltip = "Exclude component names (comma/semicolon separated)";
+			componentExcludeField.RegisterValueChangedCallback(evt =>
+			{
+				_componentExcludeFilter = evt.newValue;
+			});
+			componentRow.Add(componentExcludeField);
+
+			_filterSection.Add(componentRow);
+
+			// System Row
+			var systemRow = new VisualElement
+				{ style = { flexDirection = FlexDirection.Row, marginBottom = 4 } };
+			systemRow.Add(
+				new Label("System")
+					{ style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft } });
+
+			var systemField = new TextField
+				{ value = _systemFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 } };
+			systemField.tooltip = "Filter by system names (comma/semicolon separated)";
 			systemField.RegisterValueChangedCallback(evt => { _systemFilter = evt.newValue; });
-			row2.Add(systemField);
+			systemRow.Add(systemField);
 
-			var excludeField = new TextField("Exclude")
-				{ value = _systemExcludeFilter, style = { flexGrow = 1, marginLeft = 10 } };
-			excludeField.labelElement.style.minWidth = 70;
+			var excludeField = new TextField
+				{ value = _systemExcludeFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 } };
+			excludeField.tooltip = "Exclude system names (comma/semicolon separated)";
 			excludeField.RegisterValueChangedCallback(evt =>
 			{
 				_systemExcludeFilter = evt.newValue;
 			});
-			row2.Add(excludeField);
-			_filterSection.Add(row2);
+			systemRow.Add(excludeField);
 
-			// Row 3: Types & Reset
-			var row3 = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-			row3.Add(
-				new Label("Types:")
-					{ style = { minWidth = 50, unityTextAlign = TextAnchor.MiddleLeft } });
+			_filterSection.Add(systemRow);
 
-			var addToggle = new ToolbarToggle { text = "Added", value = _showAdd };
+			// Row 4: Types & Reset
+			var row4 = new VisualElement
+				{ style = { flexDirection = FlexDirection.Row, marginTop = 4 } };
+			row4.Add(
+				new Label("Event Types:")
+					{ style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft } });
+
+			var addToggle = new ToolbarToggle
+				{ text = "Added", value = _showAdd, style = { flexGrow = 0 } };
 			addToggle.RegisterValueChangedCallback(evt => { _showAdd = evt.newValue; });
-			row3.Add(addToggle);
+			row4.Add(addToggle);
 
-			var updToggle = new ToolbarToggle { text = "Updated", value = _showUpdate };
+			var updToggle = new ToolbarToggle
+				{ text = "Updated", value = _showUpdate, style = { flexGrow = 0 } };
 			updToggle.RegisterValueChangedCallback(evt => { _showUpdate = evt.newValue; });
-			row3.Add(updToggle);
+			row4.Add(updToggle);
 
-			var remToggle = new ToolbarToggle { text = "Removed", value = _showRemove };
+			var remToggle = new ToolbarToggle
+				{ text = "Removed", value = _showRemove, style = { flexGrow = 0 } };
 			remToggle.RegisterValueChangedCallback(evt => { _showRemove = evt.newValue; });
-			row3.Add(remToggle);
+			row4.Add(remToggle);
 
-			row3.Add(new VisualElement { style = { flexGrow = 1 } });
+			row4.Add(new VisualElement { style = { flexGrow = 1 } });
 
 			var resetButton = new Button(() =>
 			{
 				_entityFilter = string.Empty;
+				_entityExcludeFilter = string.Empty;
 				_componentFilter = string.Empty;
+				_componentExcludeFilter = string.Empty;
 				_systemFilter = string.Empty;
 				_systemExcludeFilter = string.Empty;
 				entityField.SetValueWithoutNotify(string.Empty);
+				entityExcludeField.SetValueWithoutNotify(string.Empty);
 				componentField.SetValueWithoutNotify(string.Empty);
+				componentExcludeField.SetValueWithoutNotify(string.Empty);
 				systemField.SetValueWithoutNotify(string.Empty);
 				excludeField.SetValueWithoutNotify(string.Empty);
 			})
@@ -196,8 +268,8 @@ namespace Beneton.ECS.Core.Editor
 				style = { width = 100 }
 			};
 
-			row3.Add(resetButton);
-			_filterSection.Add(row3);
+			row4.Add(resetButton);
+			_filterSection.Add(row4);
 
 			root.Add(_filterSection);
 
@@ -294,7 +366,7 @@ namespace Beneton.ECS.Core.Editor
 			{
 				style =
 				{
-					unityTextAlign = TextAnchor.MiddleCenter,
+					unityTextAlign = TextAnchor.UpperCenter,
 					flexGrow = 1,
 					fontSize = 20
 				}
@@ -331,15 +403,6 @@ namespace Beneton.ECS.Core.Editor
 		private void RefreshVisibility()
 		{
 			var isPlaying = Application.isPlaying;
-			if (_filterSection != null)
-			{
-				_filterSection.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
-			}
-
-			if (_listView != null)
-			{
-				_listView.style.display = isPlaying ? DisplayStyle.Flex : DisplayStyle.None;
-			}
 
 			if (_notPlayingLabel != null)
 			{
@@ -378,8 +441,26 @@ namespace Beneton.ECS.Core.Editor
 			};
 		}
 
+		private bool IsAtBottom()
+		{
+			var scrollView = _listView.Q<ScrollView>();
+			var verticalScroller = scrollView.verticalScroller;
+
+			// If the scroll view is not scrollable, we're at the bottom.
+			if (verticalScroller.style.visibility == Visibility.Hidden)
+			{
+				return true;
+			}
+
+			// A small threshold to account for floating point errors or styling offsets
+			const float threshold = 2.0f;
+			return verticalScroller.value >= verticalScroller.highValue - threshold;
+		}
+
 		private void UpdateFilteredList()
 		{
+			var wasAtBottom = IsAtBottom();
+
 			_filteredEntries.Clear();
 			foreach (var ev in _eventEntries)
 			{
@@ -392,7 +473,7 @@ namespace Beneton.ECS.Core.Editor
 			if (_listView != null)
 			{
 				_listView.Rebuild();
-				if (_autoScroll)
+				if (wasAtBottom)
 				{
 					ScrollToBottom();
 				}
@@ -427,18 +508,97 @@ namespace Beneton.ECS.Core.Editor
 
 			if (!string.IsNullOrEmpty(_entityFilter))
 			{
-				if (!ev.EntityName.Contains(_entityFilter) &&
-					!ev.EntityId.ToString().Contains(_entityFilter))
+				var filters = _entityFilter.Split(new[] { ',', ';' });
+				var match = false;
+				foreach (var filter in filters)
+				{
+					var trimmed = filter.Trim();
+					if (string.IsNullOrEmpty(trimmed))
+					{
+						continue;
+					}
+
+					if (ev.EntityName.Contains(trimmed) ||
+						ev.EntityId.ToString().Contains(trimmed))
+					{
+						match = true;
+						break;
+					}
+				}
+
+				if (!match)
 				{
 					return false;
 				}
 			}
 
+			if (!string.IsNullOrEmpty(_entityExcludeFilter))
+			{
+				var filters = _entityExcludeFilter.Split(new[] { ',', ';' });
+				foreach (var filter in filters)
+				{
+					var trimmed = filter.Trim();
+					if (string.IsNullOrEmpty(trimmed))
+					{
+						continue;
+					}
+
+					if (ev.EntityName.Contains(trimmed) ||
+						ev.EntityId.ToString().Contains(trimmed))
+					{
+						return false;
+					}
+				}
+			}
+
 			if (!string.IsNullOrEmpty(_componentFilter))
 			{
-				if (ev.ComponentName == null || !ev.ComponentName.Contains(_componentFilter))
+				if (ev.ComponentName == null)
 				{
 					return false;
+				}
+
+				var filters = _componentFilter.Split(new[] { ',', ';' });
+				var match = false;
+				foreach (var filter in filters)
+				{
+					var trimmed = filter.Trim();
+					if (string.IsNullOrEmpty(trimmed))
+					{
+						continue;
+					}
+
+					if (ev.ComponentName.Contains(trimmed))
+					{
+						match = true;
+						break;
+					}
+				}
+
+				if (!match)
+				{
+					return false;
+				}
+			}
+
+			if (!string.IsNullOrEmpty(_componentExcludeFilter))
+			{
+				if (ev.ComponentName != null)
+				{
+					var filters = _componentExcludeFilter.Split(new[] { ',', ';' });
+					foreach (var filter in filters)
+					{
+						var trimmed = filter.Trim();
+						if (string.IsNullOrEmpty(trimmed))
+						{
+							continue;
+						}
+
+						if (ev.ComponentName.Contains(trimmed))
+						{
+							return false;
+						}
+					}
 				}
 			}
 
@@ -531,7 +691,6 @@ namespace Beneton.ECS.Core.Editor
 				{
 					EntityId = entity.Id,
 					EntityName = entityName,
-					ComponentId = componentId,
 					ComponentName = componentName,
 					CallerName = caller,
 					Type = TimelineEventType.AddComponent,
@@ -556,7 +715,6 @@ namespace Beneton.ECS.Core.Editor
 				{
 					EntityId = entity.Id,
 					EntityName = entityName,
-					ComponentId = componentId,
 					ComponentName = componentName,
 					CallerName = caller,
 					Type = TimelineEventType.UpdateComponent,
@@ -581,7 +739,6 @@ namespace Beneton.ECS.Core.Editor
 				{
 					EntityId = entity.Id,
 					EntityName = entityName,
-					ComponentId = componentId,
 					ComponentName = componentName,
 					CallerName = caller,
 					Type = TimelineEventType.RemoveComponent,
@@ -601,7 +758,6 @@ namespace Beneton.ECS.Core.Editor
 				{
 					EntityId = entity.Id,
 					EntityName = entityName,
-					ComponentId = -1,
 					ComponentName = "All",
 					CallerName = caller,
 					Type = TimelineEventType.RemoveAllComponents,

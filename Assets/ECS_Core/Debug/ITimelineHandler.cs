@@ -12,7 +12,6 @@
 	{
 		public int EntityId;
 		public string EntityName;
-		public int ComponentId;
 		public string ComponentName;
 		public string CallerName;
 		public TimelineEventType Type;
