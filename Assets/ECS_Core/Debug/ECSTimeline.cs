@@ -33,6 +33,7 @@ namespace Beneton.ECS.Core.Editor
 		}
 
 		private bool _isActive = true;
+		private bool _autoSelectInHierarchy = true;
 
 		// Filtering
 		private string _entityFilter = string.Empty;
@@ -89,6 +90,15 @@ namespace Beneton.ECS.Core.Editor
 			activeToggle.RegisterValueChangedCallback(evt => _isActive = evt.newValue);
 			toolbar.Add(activeToggle);
 
+			var autoSelectToggle = new ToolbarToggle
+			{
+				text = "Auto-Select", value = _autoSelectInHierarchy,
+				tooltip = "Auto-select GameObject in Hierarchy when a line is selected"
+			};
+			autoSelectToggle.RegisterValueChangedCallback(evt =>
+				_autoSelectInHierarchy = evt.newValue);
+			toolbar.Add(autoSelectToggle);
+
 			var clearButton = new ToolbarButton(() => { _eventEntries.Clear(); })
 				{ text = "Clear" };
 			toolbar.Add(clearButton);
@@ -133,7 +143,8 @@ namespace Beneton.ECS.Core.Editor
 				{
 					style =
 					{
-						flexGrow = 1, flexBasis = 0, unityFontStyleAndWeight = FontStyle.Bold, marginLeft = 4
+						flexGrow = 1, flexBasis = 0, unityFontStyleAndWeight = FontStyle.Bold,
+						marginLeft = 4
 					}
 				});
 			headerRow.Add(
@@ -161,7 +172,10 @@ namespace Beneton.ECS.Core.Editor
 			entityRow.Add(entityField);
 
 			var entityExcludeField = new TextField
-				{ value = _entityExcludeFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 } };
+			{
+				value = _entityExcludeFilter,
+				style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 }
+			};
 			entityExcludeField.tooltip = "Exclude by Entity Name/ID (comma/semicolon separated)";
 			entityExcludeField.RegisterValueChangedCallback(evt =>
 			{
@@ -179,7 +193,9 @@ namespace Beneton.ECS.Core.Editor
 					{ style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft } });
 
 			var componentField = new TextField
-				{ value = _componentFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 } };
+			{
+				value = _componentFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 }
+			};
 			componentField.tooltip = "Filter by component names (comma/semicolon separated)";
 			componentField.RegisterValueChangedCallback(evt =>
 			{
@@ -189,7 +205,8 @@ namespace Beneton.ECS.Core.Editor
 
 			var componentExcludeField = new TextField
 			{
-				value = _componentExcludeFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 }
+				value = _componentExcludeFilter,
+				style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 }
 			};
 			componentExcludeField.tooltip = "Exclude component names (comma/semicolon separated)";
 			componentExcludeField.RegisterValueChangedCallback(evt =>
@@ -205,16 +222,24 @@ namespace Beneton.ECS.Core.Editor
 				{ style = { flexDirection = FlexDirection.Row, marginBottom = 4 } };
 			systemRow.Add(
 				new Label("System")
-					{ style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft } });
+				{
+					style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft }
+				});
 
 			var systemField = new TextField
-				{ value = _systemFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 } };
+			{
+				value = _systemFilter,
+				style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 }
+			};
 			systemField.tooltip = "Filter by system names (comma/semicolon separated)";
 			systemField.RegisterValueChangedCallback(evt => { _systemFilter = evt.newValue; });
 			systemRow.Add(systemField);
 
 			var excludeField = new TextField
-				{ value = _systemExcludeFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 } };
+			{
+				value = _systemExcludeFilter,
+				style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 }
+			};
 			excludeField.tooltip = "Exclude system names (comma/semicolon separated)";
 			excludeField.RegisterValueChangedCallback(evt =>
 			{
@@ -226,23 +251,33 @@ namespace Beneton.ECS.Core.Editor
 
 			// Row 4: Types & Reset
 			var row4 = new VisualElement
-				{ style = { flexDirection = FlexDirection.Row, marginTop = 4 } };
+			{
+				style = { flexDirection = FlexDirection.Row, marginTop = 4 }
+			};
 			row4.Add(
 				new Label("Event Types:")
-					{ style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft } });
+				{
+					style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft }
+				});
 
 			var addToggle = new ToolbarToggle
-				{ text = "Added", value = _showAdd, style = { flexGrow = 0 } };
+			{
+				text = "Added", value = _showAdd, style = { flexGrow = 0 }
+			};
 			addToggle.RegisterValueChangedCallback(evt => { _showAdd = evt.newValue; });
 			row4.Add(addToggle);
 
 			var updToggle = new ToolbarToggle
-				{ text = "Updated", value = _showUpdate, style = { flexGrow = 0 } };
+			{
+				text = "Updated", value = _showUpdate, style = { flexGrow = 0 }
+			};
 			updToggle.RegisterValueChangedCallback(evt => { _showUpdate = evt.newValue; });
 			row4.Add(updToggle);
 
 			var remToggle = new ToolbarToggle
-				{ text = "Removed", value = _showRemove, style = { flexGrow = 0 } };
+			{
+				text = "Removed", value = _showRemove, style = { flexGrow = 0 }
+			};
 			remToggle.RegisterValueChangedCallback(evt => { _showRemove = evt.newValue; });
 			row4.Add(remToggle);
 
@@ -281,8 +316,11 @@ namespace Beneton.ECS.Core.Editor
 				showAlternatingRowBackgrounds = AlternatingRowBackground.All,
 				reorderable = false,
 				showBoundCollectionSize = false,
-				style = { flexGrow = 1 }
+				style = { flexGrow = 1 },
+				selectionType = SelectionType.Single
 			};
+
+			_listView.selectionChanged += OnSelectionChanged;
 
 			// Columns
 			_listView.columns.Add(
@@ -376,6 +414,32 @@ namespace Beneton.ECS.Core.Editor
 			RefreshVisibility();
 		}
 
+		private void OnSelectionChanged(IEnumerable<object> selection)
+		{
+			if (!_autoSelectInHierarchy || !Application.isPlaying || ECSDebugRef == null)
+			{
+				return;
+			}
+
+			if (selection.FirstOrDefault() is not TimelineEvent selectedEvent)
+			{
+				return;
+			}
+
+			var world = ECSDebugRef.World;
+			if (world == null)
+			{
+				return;
+			}
+
+			var entity = new Entity(selectedEvent.EntityId);
+			if (world.TryGetGameObject(entity, out var gameObject))
+			{
+				Selection.activeGameObject = gameObject;
+				EditorGUIUtility.PingObject(gameObject);
+			}
+		}
+
 		private void OnEnable()
 		{
 			EditorApplication.update += OnEditorUpdate;
@@ -414,6 +478,7 @@ namespace Beneton.ECS.Core.Editor
 				_eventEntries.Clear();
 				_filteredEntries.Clear();
 				_listView?.Rebuild();
+				UpdateFilteredList();
 			}
 		}
 
