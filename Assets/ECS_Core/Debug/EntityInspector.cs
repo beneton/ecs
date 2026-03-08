@@ -65,28 +65,12 @@ namespace Beneton.ECS.Core.Editor
 
 		private void OnEnable()
 		{
-			Selection.selectionChanged += OnSelectionChanged;
+			Selection.selectionChanged += UpdateUI;
 		}
 
 		private void OnDisable()
 		{
-			Selection.selectionChanged -= OnSelectionChanged;
-		}
-
-		private void OnSelectionChanged()
-		{
-			if (_isActive)
-			{
-				UpdateUI();
-			}
-			else
-			{
-				_statusLabel.text = "Inspector is inactive";
-				_statusLabel.style.display = DisplayStyle.Flex;
-				_scrollView.Clear();
-				_componentCache.Clear();
-				_lastSelectedGo = null;
-			}
+			Selection.selectionChanged -= UpdateUI;
 		}
 
 		public void CreateGUI()
@@ -95,14 +79,7 @@ namespace Beneton.ECS.Core.Editor
 			var toolbar = new Toolbar { style = { flexShrink = 0 } };
 
 			_activeToggle = new ToolbarToggle { text = "Active", value = _isActive };
-			_activeToggle.RegisterValueChangedCallback(evt =>
-			{
-				_isActive = evt.newValue;
-				if (_isActive)
-				{
-					UpdateUI();
-				}
-			});
+			_activeToggle.RegisterValueChangedCallback(evt => { _isActive = evt.newValue; });
 			toolbar.Add(_activeToggle);
 
 			_orderToggle = new ToolbarToggle { text = "Order By Name", value = _orderByName };
@@ -113,7 +90,15 @@ namespace Beneton.ECS.Core.Editor
 			});
 			toolbar.Add(_orderToggle);
 
-			_searchField = new ToolbarSearchField { style = { flexGrow = 1, minWidth = 100 } };
+			_searchField = new ToolbarSearchField
+			{
+				style =
+				{
+					flexGrow = 1,
+					minWidth = 100,
+					flexShrink = 1
+				}
+			};
 			_searchField.RegisterValueChangedCallback(evt =>
 			{
 				_searchFilter = evt.newValue;
@@ -121,15 +106,16 @@ namespace Beneton.ECS.Core.Editor
 			});
 			toolbar.Add(_searchField);
 
-			_selectEntityField = new IntegerField("Select Entity ID")
+			rootVisualElement.Add(toolbar);
+
+
+			_selectEntityField = new IntegerField("Select Entity By Id")
 			{
 				style = { minWidth = 100, marginLeft = 5 }
 			};
 			_selectEntityField.labelElement.style.minWidth = 80;
 			_selectEntityField.RegisterValueChangedCallback(evt => { SelectEntity(evt.newValue); });
-			toolbar.Add(_selectEntityField);
-
-			rootVisualElement.Add(toolbar);
+			rootVisualElement.Add(_selectEntityField);
 
 			// Status Label
 			_statusLabel = new Label
@@ -184,12 +170,6 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
-			if (_ecsDebugRef == null || _ecsDebugRef.World == null)
-			{
-				return;
-			}
-
 			var entity = new Entity(entityId);
 			if (_ecsDebugRef.World.TryGetGameObject(entity, out var go))
 			{
@@ -211,6 +191,11 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
+			if (!_isActive)
+			{
+				return;
+			}
+
 			if (Selection.activeGameObject == null)
 			{
 				_statusLabel.text = "Select a Game Object in Hierarchy";
@@ -222,6 +207,7 @@ namespace Beneton.ECS.Core.Editor
 			}
 
 			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
+
 			var world = _ecsDebugRef.World;
 			var componentManager = _ecsDebugRef.ComponentManager;
 			var selectedGo = Selection.activeGameObject;

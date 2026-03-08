@@ -1,7 +1,11 @@
 ﻿#if UNITY_EDITOR
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Beneton.ECS.Core.Editor
 {
@@ -13,14 +17,32 @@ namespace Beneton.ECS.Core.Editor
 	/// </summary>
 	public class ArchetypeInspector : EditorWindow
 	{
-		private Vector2 _scrollPosition = Vector2.zero;
 		private ECSDebugRef _ecsDebugRef;
 		private bool _isActive = true;
+		private string _searchFilter = string.Empty;
 
-		// Key is Component.Id
+		private ToolbarToggle _activeToggle;
+		private ToolbarSearchField _searchField;
+		private ScrollView _scrollView;
+		private Label _statusLabel;
+		private Label _statsLabel;
+
 		private SparseSet<string> _componentNames;
+		private readonly Dictionary<int, ArchetypeUI> _archetypeCache = new();
+		private readonly List<Button> _buttonPool = new();
 
-		private SparseSet<bool> _foldouts;
+		private class ArchetypeUI
+		{
+			public VisualElement Root;
+			public Label Title;
+			public Foldout Foldout;
+			public VisualElement RequiredContainer;
+			public VisualElement ExcludedContainer;
+			public VisualElement EntityList;
+			public List<Button> EntityButtons = new();
+			public List<Entity> Entities = new();
+			public int LastEntityCount = -1;
+		}
 
 		[MenuItem("Debug/Archetype Inspector")]
 		public static void ShowWindow()
@@ -28,130 +50,428 @@ namespace Beneton.ECS.Core.Editor
 			GetWindow<ArchetypeInspector>("Archetype Inspector");
 		}
 
-		private void OnEnable()
+		private void CreateGUI()
 		{
-			EditorApplication.update += OnEditorUpdate;
+			var root = rootVisualElement;
+
+			// Toolbar
+			var toolbar = new Toolbar { style = { flexShrink = 0 } };
+
+			_activeToggle = new ToolbarToggle { text = "Active", value = _isActive };
+			_activeToggle.RegisterValueChangedCallback(evt => { _isActive = evt.newValue; });
+			toolbar.Add(_activeToggle);
+
+			var expandAllButton = new ToolbarButton(() => SetAllFoldouts(true))
+			{
+				text = "Expand All",
+				style = { flexShrink = 0 }
+			};
+			toolbar.Add(expandAllButton);
+
+			var collapseAllButton = new ToolbarButton(() => SetAllFoldouts(false))
+			{
+				text = "Collapse All",
+				style = { flexShrink = 0 }
+			};
+			toolbar.Add(collapseAllButton);
+
+			_searchField = new ToolbarSearchField
+			{
+				style =
+				{
+					flexGrow = 1,
+					minWidth = 100,
+					flexShrink = 1
+				}
+			};
+			_searchField.RegisterValueChangedCallback(evt =>
+			{
+				_searchFilter = evt.newValue;
+				ApplyFiltering();
+			});
+			toolbar.Add(_searchField);
+
+			root.Add(toolbar);
+
+			// Stats Label
+			_statsLabel = new Label
+			{
+				style =
+				{
+					paddingTop = 5,
+					paddingLeft = 5,
+					fontSize = 11,
+					color = Color.gray,
+					borderBottomWidth = 1,
+					borderBottomColor = Color.gray,
+					marginBottom = 5
+				}
+			};
+			root.Add(_statsLabel);
+
+			// Status Label
+			_statusLabel = new Label
+			{
+				style =
+				{
+					paddingTop = 10,
+					paddingLeft = 5,
+					unityFontStyleAndWeight = FontStyle.Bold
+				}
+			};
+			root.Add(_statusLabel);
+
+			// ScrollView
+			_scrollView = new ScrollView { style = { flexGrow = 1 } };
+			root.Add(_scrollView);
+
+			// Schedule update
+			root.schedule.Execute(UpdateUI).Every(100);
 		}
 
 		private void OnDisable()
 		{
-			EditorApplication.update -= OnEditorUpdate;
+			_archetypeCache.Clear();
+			_buttonPool.Clear();
+			_componentNames = null;
 		}
 
-		private void OnEditorUpdate()
+		private void SetAllFoldouts(bool state)
 		{
-			Repaint();
-		}
-
-		private void OnGUI()
-		{
-			EditorGUILayout.BeginHorizontal();
+			foreach (var ui in _archetypeCache.Values)
 			{
-				_isActive = GUILayout.Toggle(_isActive, "Active");
-				if (GUILayout.Button("Collapse All"))
-				{
-					foreach (var foldoutsKey in _foldouts.Keys)
-					{
-						_foldouts.Set(foldoutsKey, false);
-					}
-				}
-
-				if (GUILayout.Button("Expand All"))
-				{
-					foreach (var foldoutsKey in _foldouts.Keys)
-					{
-						_foldouts.Set(foldoutsKey, true);
-					}
-				}
+				ui.Foldout.value = state;
 			}
-			EditorGUILayout.EndHorizontal();
+		}
 
+		private void UpdateUI()
+		{
 			if (!Application.isPlaying)
 			{
-				EditorGUILayout.LabelField("Only works in play mode");
-				_componentNames = null;
+				_scrollView.style.display = DisplayStyle.None;
+				_statusLabel.style.display = DisplayStyle.Flex;
+				_statusLabel.text = "Only works in play mode";
 				_ecsDebugRef = null;
-				_foldouts = null;
 				return;
+			}
+			else
+			{
+				_scrollView.style.display = DisplayStyle.Flex;
+				_statusLabel.style.display = DisplayStyle.None;
 			}
 
 			if (!_isActive)
 			{
-				EditorGUILayout.LabelField("Not Active");
 				return;
 			}
 
-			var richTextStyle = new GUIStyle(EditorStyles.label)
+			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
+			if (_ecsDebugRef == null || _ecsDebugRef.ComponentManager == null ||
+				_ecsDebugRef.World == null)
 			{
-				richText = true
-			};
+				_statusLabel.text = "Waiting for ECS initialization...";
+				_statusLabel.style.display = DisplayStyle.Flex;
+				return;
+			}
 
 			_componentNames ??= DebugUtils.BuildComponentSparseSet();
-			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
 
-			var world = _ecsDebugRef.World;
 			var componentManager = _ecsDebugRef.ComponentManager;
-
+			var world = _ecsDebugRef.World;
 			var allArchetypes = componentManager.GetAllArchetypes();
-			_foldouts ??= new SparseSet<bool>();
 
-			_scrollPosition = GUILayout.BeginScrollView(_scrollPosition);
+			if (allArchetypes.Length == 0)
 			{
-				foreach (var archetype in allArchetypes)
+				_statusLabel.text = "No archetypes found";
+				_statusLabel.style.display = DisplayStyle.Flex;
+				_scrollView.Clear();
+				_statsLabel.text = string.Empty;
+				return;
+			}
+
+			_statusLabel.style.display = DisplayStyle.None;
+
+			var totalEntities = world.GetEntities().Length;
+			_statsLabel.text =
+				$"Total Archetypes: {allArchetypes.Length} | Total Entities: {totalEntities}";
+
+			foreach (var archetype in allArchetypes)
+			{
+				if (!_archetypeCache.TryGetValue(archetype.Id, out var ui))
 				{
-					var entitiesInArchetype = componentManager.GetEntities(archetype);
-					var archetypeComponents = archetype.GetComponents();
-					var requiredNames = archetypeComponents.Required
-						.Select(c => _componentNames.Get(c));
-					var excludedNames = archetypeComponents.Excluded
-						.Select(c => _componentNames.Get(c));
+					ui = CreateArchetypeUI(archetype);
+					_archetypeCache.Add(archetype.Id, ui);
+					_scrollView.Add(ui.Root);
+					ApplyFilteringToArchetype(ui);
+				}
 
-					EditorGUILayout.LabelField(
-						$"<b>Archetype {archetype.Id.ToString()}</b>",
-						richTextStyle);
-					EditorGUILayout.LabelField(
-						" Required: <color=#5CFF5B>" + string.Join(", ", requiredNames) +
-						"</color>",
-						richTextStyle);
-					EditorGUILayout.LabelField(
-						" Excluded: <color=#FF5A6C>" + string.Join(", ", excludedNames) +
-						"</color>",
-						richTextStyle);
+				var entities = componentManager.GetEntities(archetype);
+				ui.Title.text = $"Archetype {archetype.Id}";
+				ui.Foldout.text = $"Entities (Count: {entities.Length})";
 
-					var foldout = _foldouts.TryGet(archetype.Id, out var exists);
-					if (!exists)
-					{
-						foldout = true;
-					}
-
-					foldout = EditorGUILayout.BeginFoldoutHeaderGroup(
-						foldout,
-						$"Entity list (Count: {entitiesInArchetype.Length})");
-					{
-						_foldouts.Set(archetype.Id, foldout);
-						if (foldout)
-						{
-							foreach (var entity in entitiesInArchetype)
-							{
-								if (world.TryGetGameObject(entity, out var go))
-								{
-									if (GUILayoutHelper.Button(go.name, EditorStyles.miniButton))
-									{
-										Selection.activeGameObject = go;
-									}
-								}
-								else
-								{
-									GUILayoutHelper.Label(entity.ToString(), EditorStyles.label);
-								}
-							}
-						}
-					}
-					EditorGUILayout.EndFoldoutHeaderGroup();
-					EditorGUILayout.Separator();
+				if (ui.Foldout.value) // Only update entities if foldout is open
+				{
+					UpdateEntityList(ui, entities, world);
 				}
 			}
-			GUILayout.EndScrollView();
+		}
+
+		private ArchetypeUI CreateArchetypeUI(Archetype archetype)
+		{
+			var ui = new ArchetypeUI
+			{
+				Root = new VisualElement
+				{
+					style =
+					{
+						marginBottom = 2,
+						marginTop = 2,
+						backgroundColor = new Color(0.25f, 0.25f, 0.25f, 0.4f),
+						borderBottomWidth = 1,
+						borderBottomColor = new Color(0.15f, 0.15f, 0.15f),
+						paddingBottom = 5
+					}
+				},
+				Title = new Label($"Archetype {archetype.Id}")
+				{
+					style =
+					{
+						unityFontStyleAndWeight = FontStyle.Bold,
+						fontSize = 13,
+						paddingLeft = 5,
+						paddingTop = 5,
+						paddingBottom = 2
+					}
+				},
+				Foldout = new Foldout
+				{
+					value = true, // Default expanded
+					text = "Entities"
+				}
+			};
+
+			ui.Root.Add(ui.Title);
+
+			var components = archetype.GetComponents();
+
+			// Required Components
+			var requiredHeader = new VisualElement
+			{
+				style =
+				{
+					flexDirection = FlexDirection.Row,
+					alignItems = Align.Center,
+					marginTop = 5,
+					paddingLeft = 5
+				}
+			};
+			requiredHeader.Add(
+				new Label("Required: ")
+					{ style = { unityFontStyleAndWeight = FontStyle.Bold, width = 70 } });
+			ui.RequiredContainer = new VisualElement
+			{
+				style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap, flexGrow = 1 }
+			};
+			requiredHeader.Add(ui.RequiredContainer);
+			ui.Root.Add(requiredHeader);
+
+			foreach (var c in components.Required)
+			{
+				var name = _componentNames.Has(c) ? _componentNames.Get(c) : $"Unknown ({c})";
+				ui.RequiredContainer.Add(CreateComponentPill(name, true));
+			}
+
+			// Excluded Components
+			var excludedHeader = new VisualElement
+			{
+				style =
+				{
+					flexDirection = FlexDirection.Row,
+					alignItems = Align.Center,
+					marginTop = 2,
+					paddingLeft = 5
+				}
+			};
+			excludedHeader.Add(
+				new Label("Excluded: ")
+					{ style = { unityFontStyleAndWeight = FontStyle.Bold, width = 70 } });
+			ui.ExcludedContainer = new VisualElement
+			{
+				style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap, flexGrow = 1 }
+			};
+			excludedHeader.Add(ui.ExcludedContainer);
+			ui.Root.Add(excludedHeader);
+
+			foreach (var c in components.Excluded)
+			{
+				var name = _componentNames.Has(c) ? _componentNames.Get(c) : $"Unknown ({c})";
+				ui.ExcludedContainer.Add(CreateComponentPill(name, false));
+			}
+
+			ui.Root.Add(ui.Foldout);
+
+			ui.EntityList = new VisualElement { style = { paddingLeft = 15 } };
+			ui.Foldout.Add(ui.EntityList);
+
+			return ui;
+		}
+
+		private VisualElement CreateComponentPill(string text, bool isRequired)
+		{
+			var pill = new Button(() => { _searchField.value = text; })
+			{
+				text = text,
+				style =
+				{
+					fontSize = 10,
+					marginRight = 4,
+					marginBottom = 2,
+					paddingLeft = 4,
+					paddingRight = 4,
+					paddingTop = 0,
+					paddingBottom = 0,
+					borderTopLeftRadius = 8,
+					borderTopRightRadius = 8,
+					borderBottomLeftRadius = 8,
+					borderBottomRightRadius = 8,
+					backgroundColor = isRequired
+						? new Color(0.15f, 0.4f, 0.15f)
+						: new Color(0.4f, 0.15f, 0.15f),
+					color = Color.white
+				}
+			};
+			pill.AddToClassList("unity-button--mini");
+			return pill;
+		}
+
+		private void UpdateEntityList(ArchetypeUI ui, ReadOnlySpan<Entity> entities, World world)
+		{
+			// Re-use existing buttons
+			var i = 0;
+			for (; i < entities.Length; i++)
+			{
+				var entity = entities[i];
+				world.TryGetGameObject(entity, out var gameObject);
+				var label = gameObject != null ? gameObject.name : entity.ToString();
+
+				if (i < ui.EntityButtons.Count)
+				{
+					// If the entity is different, update the button
+					if (i >= ui.Entities.Count || !ui.Entities[i].Equals(entity))
+					{
+						var btn = ui.EntityButtons[i];
+						btn.text = label;
+						btn.clickable = new Clickable(() => OnEntityButtonClicked(gameObject));
+
+						if (i < ui.Entities.Count)
+						{
+							ui.Entities[i] = entity;
+						}
+						else
+						{
+							ui.Entities.Add(entity);
+						}
+					}
+					else
+					{
+						// Same entity, but GameObject name might have changed
+						if (ui.EntityButtons[i].text != label)
+						{
+							ui.EntityButtons[i].text = label;
+						}
+					}
+				}
+				else
+				{
+					// Add new button
+					var btn = GetButtonFromPool(label, gameObject);
+					ui.EntityList.Add(btn);
+					ui.EntityButtons.Add(btn);
+					ui.Entities.Add(entity);
+				}
+			}
+
+			// Remove excess buttons
+			while (ui.EntityButtons.Count > entities.Length)
+			{
+				var lastIdx = ui.EntityButtons.Count - 1;
+				var btn = ui.EntityButtons[lastIdx];
+				ui.EntityList.Remove(btn);
+				_buttonPool.Add(btn);
+				ui.EntityButtons.RemoveAt(lastIdx);
+				ui.Entities.RemoveAt(lastIdx);
+			}
+
+			ui.LastEntityCount = entities.Length;
+		}
+
+		private Button GetButtonFromPool(string label, GameObject gameObject)
+		{
+			Button btn;
+			if (_buttonPool.Count > 0)
+			{
+				btn = _buttonPool[^1];
+				_buttonPool.RemoveAt(_buttonPool.Count - 1);
+				btn.text = label;
+				// Reset callback
+				btn.clickable = new Clickable(() => OnEntityButtonClicked(gameObject));
+			}
+			else
+			{
+				btn = new Button(() => OnEntityButtonClicked(gameObject))
+				{
+					style =
+					{
+						unityTextAlign = TextAnchor.MiddleLeft,
+						marginTop = 0, marginBottom = 0,
+						paddingTop = 0, paddingBottom = 0
+					}
+				};
+				btn.AddToClassList("unity-button--mini");
+			}
+
+			btn.text = label;
+			return btn;
+		}
+
+		private void OnEntityButtonClicked(GameObject gameObject)
+		{
+			if (gameObject != null)
+			{
+				Selection.activeGameObject = gameObject;
+				EditorGUIUtility.PingObject(gameObject);
+			}
+		}
+
+		private void ApplyFiltering()
+		{
+			foreach (var ui in _archetypeCache.Values)
+			{
+				ApplyFilteringToArchetype(ui);
+			}
+		}
+
+		private void ApplyFilteringToArchetype(ArchetypeUI ui)
+		{
+			if (string.IsNullOrEmpty(_searchFilter))
+			{
+				ui.Root.style.display = DisplayStyle.Flex;
+				return;
+			}
+
+			bool MatchContainer(VisualElement container)
+			{
+				return container.Children().Any(child =>
+					child is Button btn && btn.text.IndexOf(
+						_searchFilter,
+						StringComparison.OrdinalIgnoreCase) >= 0);
+			}
+
+			var match = MatchContainer(ui.RequiredContainer) ||
+				MatchContainer(ui.ExcludedContainer) ||
+				ui.Title.text.IndexOf(_searchFilter, StringComparison.OrdinalIgnoreCase) >= 0;
+
+			ui.Root.style.display = match ? DisplayStyle.Flex : DisplayStyle.None;
 		}
 	}
 }

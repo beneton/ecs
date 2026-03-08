@@ -49,7 +49,9 @@ namespace Beneton.ECS.Core.Editor
 		private const int MaxEvents = 10000;
 		private readonly List<TimelineEvent> _eventEntries = new();
 		private readonly List<TimelineEvent> _filteredEntries = new();
-
+		
+		private static readonly char[] FilterChars = new[] { ',', ';' };
+		
 		private ECSDebugRef _ecsDebugRef;
 
 		private ECSDebugRef ECSDebugRef
@@ -565,7 +567,7 @@ namespace Beneton.ECS.Core.Editor
 
 			if (!string.IsNullOrEmpty(_entityFilter))
 			{
-				var filters = _entityFilter.Split(new[] { ',', ';' });
+				var filters = _entityFilter.Split(FilterChars);
 				var match = false;
 				foreach (var filter in filters)
 				{
@@ -591,7 +593,7 @@ namespace Beneton.ECS.Core.Editor
 
 			if (!string.IsNullOrEmpty(_entityExcludeFilter))
 			{
-				var filters = _entityExcludeFilter.Split(new[] { ',', ';' });
+				var filters = _entityExcludeFilter.Split(FilterChars);
 				foreach (var filter in filters)
 				{
 					var trimmed = filter.Trim();
@@ -615,7 +617,7 @@ namespace Beneton.ECS.Core.Editor
 					return false;
 				}
 
-				var filters = _componentFilter.Split(new[] { ',', ';' });
+				var filters = _componentFilter.Split(FilterChars);
 				var match = false;
 				foreach (var filter in filters)
 				{
@@ -642,7 +644,7 @@ namespace Beneton.ECS.Core.Editor
 			{
 				if (ev.ComponentName != null)
 				{
-					var filters = _componentExcludeFilter.Split(new[] { ',', ';' });
+					var filters = _componentExcludeFilter.Split(FilterChars);
 					foreach (var filter in filters)
 					{
 						var trimmed = filter.Trim();
@@ -666,7 +668,7 @@ namespace Beneton.ECS.Core.Editor
 					return false;
 				}
 
-				var filters = _systemFilter.Split(new[] { ',', ';' });
+				var filters = _systemFilter.Split(FilterChars);
 				var match = false;
 				foreach (var filter in filters)
 				{
@@ -693,7 +695,7 @@ namespace Beneton.ECS.Core.Editor
 			{
 				if (ev.CallerName != null)
 				{
-					var filters = _systemExcludeFilter.Split(new[] { ',', ';' });
+					var filters = _systemExcludeFilter.Split(FilterChars);
 					foreach (var filter in filters)
 					{
 						var trimmed = filter.Trim();
