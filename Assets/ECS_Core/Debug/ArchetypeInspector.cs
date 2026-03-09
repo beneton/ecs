@@ -17,7 +17,7 @@ namespace Beneton.ECS.Core.Editor
 	/// </summary>
 	public class ArchetypeInspector : EditorWindow
 	{
-		private ECSDebugRef _ecsDebugRef;
+		private EcsDebugRef _ecsDebugRef;
 		private bool _isActive = true;
 		private string _searchFilter = string.Empty;
 
@@ -41,10 +41,9 @@ namespace Beneton.ECS.Core.Editor
 			public VisualElement EntityList;
 			public List<Button> EntityButtons = new();
 			public List<Entity> Entities = new();
-			public int LastEntityCount = -1;
 		}
 
-		[MenuItem("Debug/Archetype Inspector")]
+		[MenuItem("Ecs Debug/Archetype Inspector")]
 		public static void ShowWindow()
 		{
 			GetWindow<ArchetypeInspector>("Archetype Inspector");
@@ -165,7 +164,7 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
+			_ecsDebugRef ??= FindFirstObjectByType<EcsDebugRef>();
 			if (_ecsDebugRef == null)
 			{
 				_statusLabel.text = "Waiting for ECS initialization...";
@@ -322,7 +321,7 @@ namespace Beneton.ECS.Core.Editor
 				text = text,
 				style =
 				{
-					fontSize = 10,
+					fontSize = 12,
 					marginRight = 4,
 					marginBottom = 2,
 					paddingLeft = 4,
@@ -400,8 +399,6 @@ namespace Beneton.ECS.Core.Editor
 				ui.EntityButtons.RemoveAt(lastIdx);
 				ui.Entities.RemoveAt(lastIdx);
 			}
-
-			ui.LastEntityCount = entities.Length;
 		}
 
 		private Button GetButtonFromPool(string label, GameObject gameObject)

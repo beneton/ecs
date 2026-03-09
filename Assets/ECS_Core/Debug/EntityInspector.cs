@@ -39,7 +39,7 @@ namespace Beneton.ECS.Core.Editor
 			public IComponent Component;
 		}
 
-		private ECSDebugRef _ecsDebugRef;
+		private EcsDebugRef _ecsDebugRef;
 		private bool _isActive = true;
 		private bool _orderByName = false;
 		private string _searchFilter = string.Empty;
@@ -57,7 +57,7 @@ namespace Beneton.ECS.Core.Editor
 		private readonly Dictionary<int, ComponentUI> _componentCache = new();
 		private List<int> _currentVisibleComponentIds = new();
 
-		[MenuItem("Debug/Entity Inspector")]
+		[MenuItem("Ecs Debug/Entity Inspector")]
 		public static void ShowWindow()
 		{
 			GetWindow<EntityInspector>("Entity Inspector");
@@ -206,7 +206,7 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
+			_ecsDebugRef ??= FindFirstObjectByType<EcsDebugRef>();
 			if (_ecsDebugRef == null)
 			{
 				_statusLabel.text = "Waiting for ECS initialization...";
@@ -282,6 +282,19 @@ namespace Beneton.ECS.Core.Editor
 					}
 				};
 				headerContainer.Add(entityLabel);
+
+				var timelineButton = new Button(() =>
+				{
+					var timeline = GetWindow<EcsTimeline>("Ecs Timeline");
+					timeline.SetEntityFilter(entity.Id.ToString());
+					timeline.Focus();
+				})
+				{
+					text = "Filter Timeline",
+					style = { height = 20, fontSize = 10 }
+				};
+				headerContainer.Add(timelineButton);
+
 				_scrollView.Add(headerContainer);
 
 				foreach (var component in allComponents)
