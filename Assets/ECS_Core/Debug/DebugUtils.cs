@@ -8,7 +8,7 @@ namespace Beneton.ECS.Core.Editor
 	/// <summary>
 	/// Provides static utility methods for Editor-only debugging and inspection of ECS state.
 	/// - Main Functionality: Uses reflection to scan assemblies for all types implementing <see cref="IComponent"/> to build a mapping of component IDs to their names.
-	/// - Usefulness: Enables debug tools (like <see cref="ArchetypeInspector"/> and <see cref="EcsTimeline"/>) to display human-readable component names instead of raw IDs.
+	/// - Usefulness: Enables debug tools (like <see cref="ArchetypeInspector"/> and <see cref="EcsTimeline2"/>) to display human-readable component names instead of raw IDs.
 	/// </summary>
 	public static class DebugUtils
 	{

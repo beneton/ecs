@@ -39,7 +39,7 @@ namespace Beneton.ECS.Core.Editor
 			public IComponent Component;
 		}
 
-		private ECSDebugRef _ecsDebugRef;
+		private EcsDebugRef2 _ecsDebugRef;
 		private bool _isActive = true;
 		private bool _orderByName = false;
 		private string _searchFilter = string.Empty;
@@ -206,7 +206,7 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
+			_ecsDebugRef ??= FindFirstObjectByType<EcsDebugRef2>();
 			if (_ecsDebugRef == null)
 			{
 				_statusLabel.text = "Waiting for ECS initialization...";

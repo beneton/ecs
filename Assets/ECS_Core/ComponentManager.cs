@@ -43,7 +43,7 @@ namespace Beneton.ECS.Core
 		internal void TryFindTimelineHandler()
 		{
 #if UNITY_EDITOR
-			var ecsTimeline = Resources.FindObjectsOfTypeAll<EcsTimeline>();
+			var ecsTimeline = Resources.FindObjectsOfTypeAll<EcsTimeline2>();
 			if (ecsTimeline is { Length: > 0 })
 			{
 				SetTimelineHandler(ecsTimeline[0]);

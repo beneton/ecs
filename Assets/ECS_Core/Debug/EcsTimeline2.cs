@@ -14,7 +14,7 @@ namespace Beneton.ECS.Core.Editor
 	/// - Intention: To capture and display a sequence of "Adding", "Updating", and "Removing" component operations in the Unity Editor during Play Mode.
 	/// - Usefulness: Helps developers trace the exact order and timing of state changes for entities, making it easier to identify unexpected behaviors or race conditions in system logic.
 	/// </summary>
-	public class EcsTimeline : EditorWindow, ITimelineHandler
+	public class EcsTimeline2 : EditorWindow, ITimelineHandler
 	{
 		// Key is Component.Id
 		private SparseSet<string> _componentNames;
@@ -46,21 +46,21 @@ namespace Beneton.ECS.Core.Editor
 		private bool _showUpdate = true;
 		private bool _showRemove = true;
 
-		private const int MaxEvents = 100000;
+		private int _maxEvents = 100000;
 		private readonly List<TimelineEvent> _eventEntries = new();
 		private readonly List<TimelineEvent> _filteredEntries = new();
-		
-		private static readonly char[] FilterChars = new[] { ',', ';' };
-		
-		private ECSDebugRef _ecsDebugRef;
 
-		private ECSDebugRef ECSDebugRef
+		private static readonly char[] FilterChars = { ',', ';' };
+
+		private EcsDebugRef2 _ecsDebugRef;
+
+		private EcsDebugRef2 ECSDebugRef
 		{
 			get
 			{
 				if (_ecsDebugRef == null)
 				{
-					_ecsDebugRef = FindFirstObjectByType<ECSDebugRef>();
+					_ecsDebugRef = FindFirstObjectByType<EcsDebugRef2>();
 				}
 
 				return _ecsDebugRef;
@@ -75,7 +75,7 @@ namespace Beneton.ECS.Core.Editor
 		[MenuItem("Debug/ECS Timeline")]
 		public static void ShowWindow()
 		{
-			GetWindow<EcsTimeline>("ECS Timeline");
+			GetWindow<EcsTimeline2>("ECS Timeline");
 		}
 
 		public void CreateGUI()
@@ -281,6 +281,23 @@ namespace Beneton.ECS.Core.Editor
 			};
 			remToggle.RegisterValueChangedCallback(evt => { _showRemove = evt.newValue; });
 			row4.Add(remToggle);
+
+			var maxEventsField = new IntegerField("Max Events")
+			{
+				value = _maxEvents,
+				tooltip = "Maximum number of events to keep in the log",
+				style = { width = 200 }
+			};
+			maxEventsField.RegisterValueChangedCallback(evt =>
+			{
+				_maxEvents = Mathf.Max(1, (int)evt.newValue);
+				while (_eventEntries.Count > _maxEvents)
+				{
+					_eventEntries.RemoveAt(0);
+				}
+			});
+
+			row4.Add(maxEventsField);
 
 			row4.Add(new VisualElement { style = { flexGrow = 1 } });
 
@@ -577,8 +594,7 @@ namespace Beneton.ECS.Core.Editor
 						continue;
 					}
 
-					if (ev.EntityName.Contains(trimmed) ||
-						ev.EntityId.ToString().Contains(trimmed))
+					if (ev.EntityId.ToString() == trimmed)
 					{
 						match = true;
 						break;
@@ -602,8 +618,7 @@ namespace Beneton.ECS.Core.Editor
 						continue;
 					}
 
-					if (ev.EntityName.Contains(trimmed) ||
-						ev.EntityId.ToString().Contains(trimmed))
+					if (ev.EntityId.ToString() == trimmed)
 					{
 						return false;
 					}
@@ -826,7 +841,7 @@ namespace Beneton.ECS.Core.Editor
 
 		private void RegisterEvent(TimelineEvent ev)
 		{
-			if (_eventEntries.Count >= MaxEvents)
+			while (_eventEntries.Count >= _maxEvents && _eventEntries.Count > 0)
 			{
 				_eventEntries.RemoveAt(0);
 			}
