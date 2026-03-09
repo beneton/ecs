@@ -14,7 +14,7 @@ namespace Beneton.ECS.Core.Editor
 	/// - Intention: To capture and display a sequence of "Adding", "Updating", and "Removing" component operations in the Unity Editor during Play Mode.
 	/// - Usefulness: Helps developers trace the exact order and timing of state changes for entities, making it easier to identify unexpected behaviors or race conditions in system logic.
 	/// </summary>
-	public class EcsTimeline2 : EditorWindow, ITimelineHandler
+	public class EcsTimeline : EditorWindow, ITimelineHandler
 	{
 		// Key is Component.Id
 		private SparseSet<string> _componentNames;
@@ -52,15 +52,15 @@ namespace Beneton.ECS.Core.Editor
 
 		private static readonly char[] FilterChars = { ',', ';' };
 
-		private EcsDebugRef2 _ecsDebugRef;
+		private EcsDebugRef _ecsDebugRef;
 
-		private EcsDebugRef2 ECSDebugRef
+		private EcsDebugRef ECSDebugRef
 		{
 			get
 			{
 				if (_ecsDebugRef == null)
 				{
-					_ecsDebugRef = FindFirstObjectByType<EcsDebugRef2>();
+					_ecsDebugRef = FindFirstObjectByType<EcsDebugRef>();
 				}
 
 				return _ecsDebugRef;
@@ -75,7 +75,7 @@ namespace Beneton.ECS.Core.Editor
 		[MenuItem("Debug/ECS Timeline")]
 		public static void ShowWindow()
 		{
-			GetWindow<EcsTimeline2>("ECS Timeline");
+			GetWindow<EcsTimeline>("ECS Timeline");
 		}
 
 		public void CreateGUI()

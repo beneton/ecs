@@ -41,7 +41,7 @@ namespace Beneton.ECS.Core
 #if UNITY_EDITOR
 			// Needed support object to enable debug inspector windows
 			var debugGo = new GameObject("ECS-Debug");
-			var debugRef = debugGo.AddComponent<EcsDebugRef2>();
+			var debugRef = debugGo.AddComponent<EcsDebugRef>();
 			debugRef.World = this;
 			debugRef.ComponentManager = _componentManager;
 			_componentManager.TryFindTimelineHandler();
