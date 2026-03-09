@@ -31,14 +31,15 @@ namespace OOPDemo
 
 		private void Awake()
 		{
-			_travelLog = FindFirstObjectByType<TravelLog>();
 			_meshRenderers = GetComponentsInChildren<MeshRenderer>();
-			_entityCounter = FindFirstObjectByType<EntityCounter>();
+		}
 
-			if (_entityCounter != null)
-			{
-				_entityCounter.Increase();
-			}
+		private void Start()
+		{
+			_entityCounter = EntityCounter.Instance;
+			_travelLog = TravelLog.Instance;
+
+			_entityCounter.Increase();
 		}
 
 		private void OnDestroy()

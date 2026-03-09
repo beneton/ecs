@@ -46,7 +46,7 @@ namespace Beneton.ECS.Core.Editor
 		private bool _showUpdate = true;
 		private bool _showRemove = true;
 
-		private const int MaxEvents = 10000;
+		private const int MaxEvents = 100000;
 		private readonly List<TimelineEvent> _eventEntries = new();
 		private readonly List<TimelineEvent> _filteredEntries = new();
 		

@@ -1,15 +1,24 @@
-﻿using TMPro;
+﻿using System;
+using TMPro;
 using UnityEngine;
 
 namespace OOPDemo
 {
 	public class EntityCounter : MonoBehaviour
 	{
+		private static EntityCounter _instance;
+		public static EntityCounter Instance => _instance;
+
 		[SerializeField]
 		private TextMeshProUGUI _countField;
 
 		private int _count;
 		private bool _hasChange;
+
+		private void Awake()
+		{
+			_instance = this;
+		}
 
 		public void Increase()
 		{
