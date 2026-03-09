@@ -166,8 +166,7 @@ namespace Beneton.ECS.Core.Editor
 			}
 
 			_ecsDebugRef ??= FindFirstObjectByType<ECSDebugRef>();
-			if (_ecsDebugRef == null || _ecsDebugRef.ComponentManager == null ||
-				_ecsDebugRef.World == null)
+			if (_ecsDebugRef == null)
 			{
 				_statusLabel.text = "Waiting for ECS initialization...";
 				_statusLabel.style.display = DisplayStyle.Flex;

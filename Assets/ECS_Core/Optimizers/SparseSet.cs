@@ -83,10 +83,10 @@ namespace Beneton.ECS.Core
 			var last = _count - 1;
 
 			// Move last element into removed slot
-			var lastEntity = _dense[last];
-			_dense[index] = lastEntity;
+			var lastElement = _dense[last];
+			_dense[index] = lastElement;
 			_values[index] = _values[last];
-			_sparse[lastEntity] = index;
+			_sparse[lastElement] = index;
 
 			_count--;
 		}
