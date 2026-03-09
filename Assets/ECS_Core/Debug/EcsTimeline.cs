@@ -50,7 +50,7 @@ namespace Beneton.ECS.Core.Editor
 		private readonly List<TimelineEvent> _eventEntries = new();
 		private readonly List<TimelineEvent> _filteredEntries = new();
 
-		private static readonly char[] FilterChars = { ',', ';' };
+		private static readonly char[] FilterChars = { ',' };
 
 		private EcsDebugRef _ecsDebugRef;
 
@@ -72,10 +72,10 @@ namespace Beneton.ECS.Core.Editor
 		private VisualElement _filterSection;
 		private VisualElement _notPlayingLabel;
 
-		[MenuItem("Debug/ECS Timeline")]
+		[MenuItem("Ecs Debug/Timeline")]
 		public static void ShowWindow()
 		{
-			GetWindow<EcsTimeline>("ECS Timeline");
+			GetWindow<EcsTimeline>("Ecs Timeline");
 		}
 
 		public void CreateGUI()
@@ -138,22 +138,32 @@ namespace Beneton.ECS.Core.Editor
 			};
 			headerRow.Add(
 				new Label("Filter Type")
-					{ style = { width = labelWidth, unityFontStyleAndWeight = FontStyle.Bold } });
-			headerRow.Add(
-				new Label("Show (Inclusion)")
 				{
 					style =
 					{
-						flexGrow = 1, flexBasis = 0, unityFontStyleAndWeight = FontStyle.Bold,
+						width = labelWidth,
+						unityFontStyleAndWeight = FontStyle.Bold
+					}
+				});
+			headerRow.Add(
+				new Label("Show Only (comma separated)")
+				{
+					style =
+					{
+						flexGrow = 1,
+						flexBasis = 0,
+						unityFontStyleAndWeight = FontStyle.Bold,
 						marginLeft = 4
 					}
 				});
 			headerRow.Add(
-				new Label("Hide (Exclusion)")
+				new Label("Hide (comma separated)")
 				{
 					style =
 					{
-						flexGrow = 1, flexBasis = 0, unityFontStyleAndWeight = FontStyle.Bold,
+						flexGrow = 1,
+						flexBasis = 0,
+						unityFontStyleAndWeight = FontStyle.Bold,
 						marginLeft = 10
 					}
 				});
@@ -161,23 +171,40 @@ namespace Beneton.ECS.Core.Editor
 
 			// Entity Row
 			var entityRow = new VisualElement
-				{ style = { flexDirection = FlexDirection.Row, marginBottom = 2 } };
+			{
+				style =
+				{
+					flexDirection = FlexDirection.Row, marginBottom = 2
+				}
+			};
 			entityRow.Add(
-				new Label("Entity")
-					{ style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft } });
+				new Label("Entity Id")
+				{
+					style = { width = labelWidth, unityTextAlign = TextAnchor.MiddleLeft }
+				});
 
 			var entityField = new TextField
-				{ value = _entityFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 } };
-			entityField.tooltip = "Filter by Entity Name/ID (comma/semicolon separated)";
+			{
+				value = _entityFilter,
+				style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 },
+				tooltip = "Filter by Entity ID (comma separated)"
+			};
 			entityField.RegisterValueChangedCallback(evt => { _entityFilter = evt.newValue; });
+			_filterSection.schedule.Execute(() =>
+			{
+				if (entityField.value != _entityFilter)
+				{
+					entityField.value = _entityFilter;
+				}
+			}).Every(100);
 			entityRow.Add(entityField);
 
 			var entityExcludeField = new TextField
 			{
 				value = _entityExcludeFilter,
-				style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 }
+				style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 },
+				tooltip = "Exclude by Entity ID (comma separated)"
 			};
-			entityExcludeField.tooltip = "Exclude by Entity Name/ID (comma/semicolon separated)";
 			entityExcludeField.RegisterValueChangedCallback(evt =>
 			{
 				_entityExcludeFilter = evt.newValue;
@@ -197,7 +224,7 @@ namespace Beneton.ECS.Core.Editor
 			{
 				value = _componentFilter, style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 }
 			};
-			componentField.tooltip = "Filter by component names (comma/semicolon separated)";
+			componentField.tooltip = "Filter by component names (comma separated)";
 			componentField.RegisterValueChangedCallback(evt =>
 			{
 				_componentFilter = evt.newValue;
@@ -209,7 +236,7 @@ namespace Beneton.ECS.Core.Editor
 				value = _componentExcludeFilter,
 				style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 }
 			};
-			componentExcludeField.tooltip = "Exclude component names (comma/semicolon separated)";
+			componentExcludeField.tooltip = "Exclude component by name (comma separated)";
 			componentExcludeField.RegisterValueChangedCallback(evt =>
 			{
 				_componentExcludeFilter = evt.newValue;
@@ -232,7 +259,7 @@ namespace Beneton.ECS.Core.Editor
 				value = _systemFilter,
 				style = { flexGrow = 1, flexBasis = 0, marginLeft = 4 }
 			};
-			systemField.tooltip = "Filter by system names (comma/semicolon separated)";
+			systemField.tooltip = "Filter by system names (comma separated)";
 			systemField.RegisterValueChangedCallback(evt => { _systemFilter = evt.newValue; });
 			systemRow.Add(systemField);
 
@@ -241,7 +268,7 @@ namespace Beneton.ECS.Core.Editor
 				value = _systemExcludeFilter,
 				style = { flexGrow = 1, flexBasis = 0, marginLeft = 10 }
 			};
-			excludeField.tooltip = "Exclude system names (comma/semicolon separated)";
+			excludeField.tooltip = "Exclude system by names (comma separated)";
 			excludeField.RegisterValueChangedCallback(evt =>
 			{
 				_systemExcludeFilter = evt.newValue;
@@ -290,7 +317,7 @@ namespace Beneton.ECS.Core.Editor
 			};
 			maxEventsField.RegisterValueChangedCallback(evt =>
 			{
-				_maxEvents = Mathf.Max(1, (int)evt.newValue);
+				_maxEvents = Mathf.Max(1, evt.newValue);
 				while (_eventEntries.Count > _maxEvents)
 				{
 					_eventEntries.RemoveAt(0);
@@ -531,6 +558,13 @@ namespace Beneton.ECS.Core.Editor
 			// A small threshold to account for floating point errors or styling offsets
 			const float threshold = 2.0f;
 			return verticalScroller.value >= verticalScroller.highValue - threshold;
+		}
+
+		public void SetEntityFilter(string filter)
+		{
+			_entityFilter = filter;
+			UpdateFilteredList();
+			RefreshVisibility();
 		}
 
 		private void UpdateFilteredList()

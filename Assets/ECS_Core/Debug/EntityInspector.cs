@@ -57,7 +57,7 @@ namespace Beneton.ECS.Core.Editor
 		private readonly Dictionary<int, ComponentUI> _componentCache = new();
 		private List<int> _currentVisibleComponentIds = new();
 
-		[MenuItem("Debug/Entity Inspector")]
+		[MenuItem("Ecs Debug/Entity Inspector")]
 		public static void ShowWindow()
 		{
 			GetWindow<EntityInspector>("Entity Inspector");
@@ -282,6 +282,19 @@ namespace Beneton.ECS.Core.Editor
 					}
 				};
 				headerContainer.Add(entityLabel);
+
+				var timelineButton = new Button(() =>
+				{
+					var timeline = GetWindow<EcsTimeline>("Ecs Timeline");
+					timeline.SetEntityFilter(entity.Id.ToString());
+					timeline.Focus();
+				})
+				{
+					text = "Filter Timeline",
+					style = { height = 20, fontSize = 10 }
+				};
+				headerContainer.Add(timelineButton);
+
 				_scrollView.Add(headerContainer);
 
 				foreach (var component in allComponents)
