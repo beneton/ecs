@@ -8,6 +8,8 @@ namespace DotsDemo
 	{
 		public Material MovingMaterial;
 		public Material RestingMaterial;
+		
+		public GameObject TravelerPrefab;
 
 		public class ConfigBaker : Baker<ConfigAuthoring>
 		{
@@ -18,7 +20,8 @@ namespace DotsDemo
 					entity,
 					new Config
 					{
-						Random = new Random((uint)(UnityEngine.Random.value * 1000))
+						Random = new Random((uint)(UnityEngine.Random.value * 1000)),
+						TravelerPrefab = GetEntity(authoring.TravelerPrefab, TransformUsageFlags.Dynamic),
 					});
 
 				AddComponentObject(

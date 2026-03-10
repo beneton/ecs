@@ -1,30 +1,53 @@
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Rendering;
 using Unity.Transforms;
+using UnityEngine.Rendering;
 
 namespace DotsDemo
 {
-	public partial struct StartMoveSystem : ISystem
+	public partial struct StartMovingSystem : ISystem
 	{
-		[BurstCompile]
+		private BatchMaterialID? _movingMaterialID;
+
 		public void OnCreate(ref SystemState state)
 		{
 			state.RequireForUpdate<Config>();
+			state.RequireForUpdate<ConfigManaged>();
 		}
 
-		[BurstCompile]
 		public void OnUpdate(ref SystemState state)
 		{
+			if (!_movingMaterialID.HasValue)
+			{
+				var configEntity = SystemAPI.GetSingletonEntity<Config>();
+				var configManaged =
+					state.EntityManager.GetComponentObject<ConfigManaged>(configEntity);
+				var egs = state.World.GetOrCreateSystemManaged<EntitiesGraphicsSystem>();
+
+				_movingMaterialID = egs.RegisterMaterial(configManaged.MovingMaterial);
+			}
+
 			var config = SystemAPI.GetSingletonRW<Config>();
 			var ecb = new EntityCommandBuffer(Allocator.Temp);
 
 			// Setup new travelers
-			foreach (var (startMoving, movement, transform, entity) in
-				SystemAPI.Query<RefRO<StartMoving>, RefRW<Movement>, RefRW<LocalTransform>>()
+			foreach (var (startMoving,
+					movement,
+					transform,
+					matMeshInfo,
+					entity)
+				in
+				SystemAPI.Query<
+						RefRO<StartMoving>,
+						RefRW<Movement>,
+						RefRW<LocalTransform>,
+						RefRW<MaterialMeshInfo>>()
 					.WithEntityAccess())
 			{
+				matMeshInfo.ValueRW.MaterialID = _movingMaterialID.Value;
+
 				var direction = math.normalize(
 					new float3(
 						config.ValueRW.Random.NextFloat(-1f, 1f),

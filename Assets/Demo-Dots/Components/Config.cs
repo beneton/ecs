@@ -6,5 +6,6 @@ namespace DotsDemo
 	public struct Config : IComponentData
 	{
 		public Random Random;
+		public Entity TravelerPrefab;
 	}
 }
