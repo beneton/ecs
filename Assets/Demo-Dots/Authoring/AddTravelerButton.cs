@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace DotsDemo
 {
-	public class AddTravelerButtonAuthoring : MonoBehaviour
+	public class AddTravelerButton : MonoBehaviour
 	{
 		[SerializeField]
 		private Button _button;

@@ -1,42 +1,49 @@
+using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace DotsDemo
 {
-	public partial struct TravelerDespawSystem : ISystem
+	public partial class TravelerDespawSystem : SystemBase
 	{
 		private InputAction _interact;
 		private InputAction _mousePosition;
+		private Camera _camera;
 
-		public void OnCreate(ref SystemState state)
+		protected override void OnCreate()
 		{
-			state.RequireForUpdate<PhysicsWorldSingleton>();
+			RequireForUpdate<PhysicsWorldSingleton>();
 
-			var actionMap = InputSystem.actions.FindActionMap("Player");
-			_interact = actionMap.FindAction("Interact");
-			_mousePosition = actionMap.FindAction("Point");
+			_interact = InputSystem.actions.FindAction("Player/Attack");
+			_mousePosition = InputSystem.actions.FindAction("UI/Point");
 		}
 
-		public void OnUpdate(ref SystemState state)
+		protected override void OnUpdate()
 		{
 			if (!_interact.WasReleasedThisFrame())
 			{
 				return;
 			}
 
-			// 1. Setup Ray
-			var ray = Camera.main.ScreenPointToRay(_mousePosition.ReadValue<Vector2>());
-			float3 start = ray.origin;
-			float3 end = ray.origin + ray.direction * 100f;
+			_camera ??= Camera.main;
+			if (_camera == null)
+			{
+				Debug.LogError("No camera found!");
+				return;
+			}
 
-			// 2. Get Physics World
+			var mouseScreenPosition = _mousePosition.ReadValue<Vector2>();
+			var ray = _camera.ScreenPointToRay(mouseScreenPosition);
+			float3 start = ray.origin;
+			float3 end = ray.origin + ray.direction * 1000f;
+
 			var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
 			var collisionWorld = physicsWorld.CollisionWorld;
 
-			// 3. Perform Raycast
 			var input = new RaycastInput
 			{
 				Start = start,
@@ -46,8 +53,31 @@ namespace DotsDemo
 
 			if (collisionWorld.CastRay(input, out var hit))
 			{
-				// 4. Destroy the hit entity
-				state.EntityManager.DestroyEntity(hit.Entity);
+				DestroyEntityAndChildren(hit.Entity);
+			}
+		}
+
+		private void DestroyEntityAndChildren(Entity entity)
+		{
+			var entitiesToDestroy = new List<Entity>(8);
+			CollectChildrenRecursively(entity, entitiesToDestroy);
+
+			foreach (var entityToDestroy in entitiesToDestroy)
+			{
+				EntityManager.DestroyEntity(entityToDestroy);
+			}
+		}
+
+		private void CollectChildrenRecursively(Entity entity, List<Entity> toDestroy)
+		{
+			toDestroy.Add(entity);
+			if (EntityManager.HasBuffer<Child>(entity))
+			{
+				var children = EntityManager.GetBuffer<Child>(entity);
+				foreach (var child in children)
+				{
+					CollectChildrenRecursively(child.Value, toDestroy);
+				}
 			}
 		}
 	}
