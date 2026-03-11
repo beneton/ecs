@@ -247,9 +247,10 @@ namespace Beneton.ECS.Core
 			foreach (var transform in allTransforms)
 			{
 				var gameObject = transform.gameObject;
-				if (TryGetEntity(gameObject, out var entity))
+				var allNodes = gameObject.GetComponentsInChildren<ISystemNode>();
+				if (allNodes.Length > 0)
 				{
-					var allNodes = gameObject.GetComponentsInChildren<ISystemNode>();
+					var entity = GetOrCreateEntity(gameObject);
 					RegisterSystemNodes(allNodes, entity);
 				}
 			}
