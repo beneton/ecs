@@ -194,7 +194,7 @@ GameObject:
   - component: {fileID: 7617974670254271694}
   - component: {fileID: 3796119674920252672}
   m_Layer: 0
-  m_Name: Traveller
+  m_Name: Traveler
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

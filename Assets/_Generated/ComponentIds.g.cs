@@ -10,77 +10,77 @@ namespace ECSSample.Components
     [Serializable] 
     public partial struct AddTravelerButton
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 1;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct Clicked
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 2;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct EcsMeshRenderers
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 3;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct EntityCounter
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 4;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct Movement
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 5;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct Moving
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 6;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct Resting
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 7;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct StartedMoving
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 8;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct StartedResting
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 9;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct Traveler
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 10;
         public int TypeId => Id;
     }
 
     [Serializable] 
     public partial struct TravelLog
     {
-        public static int Id { get; } = ComponentTypeIdProvider.Next();
+        public static int Id => 11;
         public int TypeId => Id;
     }
 
