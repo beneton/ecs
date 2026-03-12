@@ -51,3 +51,6 @@ The repository includes a **Demo** folder containing a small, practical example.
 
 While in the Unity Editor, all entities will have a GameObject representation in the Hierarchy Window. This way it is possible to quickly find a specific Entity of interest and use the EntityInspector to get inspect its Components
 These tools can be found in the menu **Window/Ecs_Core**, but this repository also provide **UnityInterfaceLayoutForECS.wlt**, a layout that can be loaded in Unity Editor to set a recommended window layout when working with Ecs_Core 
+
+### Gotchas
+A collection of interesting things to keep in mind when using this ECS Framework were collected in Gotchas.md 
