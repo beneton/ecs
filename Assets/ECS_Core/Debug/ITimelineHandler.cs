@@ -5,7 +5,9 @@
 		AddComponent,
 		UpdateComponent,
 		RemoveComponent,
-		RemoveAllComponents
+		RemoveAllComponents,
+		EntityCreated,
+		EntityDestroyed,
 	}
 
 	public struct TimelineEvent
@@ -20,9 +22,22 @@
 
 	public interface ITimelineHandler
 	{
+		void RegisterEntityCreation(Entity entity, string entityName, string caller);
+		void RegisterEntityDestruction(Entity entity, string entityName, string caller);
 		void RegisterAddComponent(Entity entity, string entityName, int componentId, string caller);
-		void RegisterUpdateComponent(Entity entity, string entityName, int componentId, string caller);
-		void RegisterRemoveComponent(Entity entity, string entityName, int componentId, string caller);
-		void RegisterRemoveAllComponent(Entity entity, string entityName, string caller);
+
+		void RegisterUpdateComponent(
+			Entity entity,
+			string entityName,
+			int componentId,
+			string caller);
+
+		void RegisterRemoveComponent(
+			Entity entity,
+			string entityName,
+			int componentId,
+			string caller);
+
+		void RegisterRemoveAllComponents(Entity entity, string entityName, string caller);
 	}
 }

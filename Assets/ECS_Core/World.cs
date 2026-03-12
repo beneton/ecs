@@ -44,7 +44,12 @@ namespace Beneton.ECS.Core
 			var debugRef = debugGo.AddComponent<EcsDebugRef>();
 			debugRef.World = this;
 			debugRef.ComponentManager = _componentManager;
-			_componentManager.TryFindTimelineHandler();
+
+			var ecsTimeline = Resources.FindObjectsOfTypeAll<EcsTimeline>();
+			if (ecsTimeline is { Length: > 0 })
+			{
+				SetTimelineHandler(ecsTimeline[0]);
+			}
 #endif
 		}
 
@@ -89,11 +94,11 @@ namespace Beneton.ECS.Core
 		{
 			var entity = GetOrCreateEntity(baker.gameObject);
 #if UNITY_EDITOR
-			_componentManager.CurrentExecutingBaker = baker.GetType().Name;
+			_currentExecutingBaker = baker.GetType().Name;
 #endif
 			baker.Bake(entity, _componentManager, this);
 #if UNITY_EDITOR
-			_componentManager.CurrentExecutingBaker = string.Empty;
+			_currentExecutingBaker = string.Empty;
 #endif
 		}
 
@@ -124,6 +129,9 @@ namespace Beneton.ECS.Core
 			var entity = InternalCreateEntity();
 			_entityGameObjectLookup.Set(entity, gameObject);
 			gameObject.name += $" [{entity.Id.ToString()}]";
+#if UNITY_EDITOR
+			RegisterEntityCreation(entity);
+#endif
 			return entity;
 		}
 
@@ -176,12 +184,12 @@ namespace Beneton.ECS.Core
 			foreach (var baker in bakers)
 			{
 #if UNITY_EDITOR
-				_componentManager.CurrentExecutingBaker = baker.GetType().Name;
+				_currentExecutingBaker = baker.GetType().Name;
 #endif
 				baker.Bake(entity, _componentManager, this);
 			}
 #if UNITY_EDITOR
-			_componentManager.CurrentExecutingBaker = string.Empty;
+			_currentExecutingBaker = string.Empty;
 #endif
 
 			// Register any SystemNode present on the Instance
@@ -198,6 +206,10 @@ namespace Beneton.ECS.Core
 
 		public void DestroyEntity(Entity entity)
 		{
+#if UNITY_EDITOR
+			RegisterEntityDestruction(entity);
+#endif
+
 			_entities.Remove(entity);
 			_componentManager.RemoveAllComponents(entity);
 			_entityGameObjectLookup.Remove(entity);
@@ -228,6 +240,9 @@ namespace Beneton.ECS.Core
 
 		public void Start(FindObjectsInactive inactiveObjectsPolicy)
 		{
+#if UNITY_EDITOR
+			_currentExecutingSystem = "World Start";
+#endif
 			// Find all existing Bakers and Bake them
 			var allBakers = Object.FindObjectsByType<Baker>(
 				inactiveObjectsPolicy,
@@ -247,7 +262,7 @@ namespace Beneton.ECS.Core
 			foreach (var transform in allTransforms)
 			{
 				var gameObject = transform.gameObject;
-				var allNodes = gameObject.GetComponentsInChildren<ISystemNode>();
+				var allNodes = gameObject.GetComponents<ISystemNode>();
 				if (allNodes.Length > 0)
 				{
 					var entity = GetOrCreateEntity(gameObject);
@@ -263,7 +278,7 @@ namespace Beneton.ECS.Core
 			foreach (var pair in _systems.Values)
 			{
 #if UNITY_EDITOR
-				_componentManager.CurrentExecutingSystem = pair.System.GetType().Name;
+				_currentExecutingSystem = pair.System.GetType().Name;
 #endif
 				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
 				pair.CommandBuffer.Execute(_componentManager);
@@ -275,11 +290,103 @@ namespace Beneton.ECS.Core
 			foreach (var pair in _lateSystems.Values)
 			{
 #if UNITY_EDITOR
-				_componentManager.CurrentExecutingSystem = pair.System.GetType().Name;
+				_currentExecutingSystem = pair.System.GetType().Name;
 #endif
 				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
 				pair.CommandBuffer.Execute(_componentManager);
 			}
 		}
+
+#if UNITY_EDITOR
+		private string _currentExecutingBaker = string.Empty;
+		private string _currentExecutingSystem = string.Empty;
+		private ITimelineHandler _timelineHandler;
+
+		internal void SetTimelineHandler(ITimelineHandler timelineHandler)
+		{
+			_timelineHandler = timelineHandler;
+		}
+
+		private void RegisterEntityCreation(Entity entity)
+		{
+			_timelineHandler?.RegisterEntityCreation(
+				entity,
+				ComposeEntityName(entity),
+				ComposeCallerString());
+		}
+
+		private void RegisterEntityDestruction(Entity entity)
+		{
+			_timelineHandler?.RegisterEntityDestruction(
+				entity,
+				ComposeEntityName(entity),
+				ComposeCallerString());
+		}
+
+		internal void RegisterAddComponent(Entity entity, int componentId)
+		{
+			_timelineHandler?.RegisterAddComponent(
+				entity,
+				ComposeEntityName(entity),
+				componentId,
+				ComposeCallerString());
+		}
+
+		internal void RegisterUpdateComponent(Entity entity, int componentId)
+		{
+			_timelineHandler?.RegisterUpdateComponent(
+				entity,
+				ComposeEntityName(entity),
+				componentId,
+				ComposeCallerString());
+		}
+
+		internal void RegisterRemoveComponent(Entity entity, int componentId)
+		{
+			_timelineHandler?.RegisterRemoveComponent(
+				entity,
+				ComposeEntityName(entity),
+				componentId,
+				ComposeCallerString());
+		}
+
+		internal void RegisterRemoveAllComponents(Entity entity)
+		{
+			_timelineHandler?.RegisterRemoveAllComponents(
+				entity,
+				ComposeEntityName(entity),
+				ComposeCallerString());
+		}
+
+		private string ComposeEntityName(Entity entity)
+		{
+			if (TryGetGameObject(entity, out var gameObject))
+			{
+				return gameObject.name;
+			}
+
+			return "Unknown";
+		}
+
+		private string ComposeCallerString()
+		{
+			var caller = "Unknown";
+			if (!string.IsNullOrEmpty(_currentExecutingBaker) &&
+				!string.IsNullOrEmpty(_currentExecutingSystem))
+			{
+				caller = $"{_currentExecutingSystem} | {_currentExecutingBaker}";
+			}
+			else if (!string.IsNullOrEmpty(_currentExecutingSystem))
+			{
+				caller = _currentExecutingSystem;
+			}
+			else if (!string.IsNullOrEmpty(_currentExecutingBaker))
+			{
+				caller = _currentExecutingBaker;
+			}
+
+			return caller;
+		}
+#endif
 	}
 }

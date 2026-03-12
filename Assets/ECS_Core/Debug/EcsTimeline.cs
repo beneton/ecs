@@ -47,6 +47,8 @@ namespace Beneton.ECS.Core.Editor
 		private bool _showAdd = true;
 		private bool _showUpdate = true;
 		private bool _showRemove = true;
+		private bool _showCreated = true;
+		private bool _showDestroyed = true;
 
 		private int _maxEvents = 100000;
 		private readonly List<TimelineEvent> _eventEntries = new();
@@ -311,6 +313,20 @@ namespace Beneton.ECS.Core.Editor
 			remToggle.RegisterValueChangedCallback(evt => { _showRemove = evt.newValue; });
 			row4.Add(remToggle);
 
+			var createdToggle = new ToolbarToggle
+			{
+				text = "Created", value = _showCreated, style = { flexGrow = 0 }
+			};
+			createdToggle.RegisterValueChangedCallback(evt => { _showCreated = evt.newValue; });
+			row4.Add(createdToggle);
+
+			var destroyedToggle = new ToolbarToggle
+			{
+				text = "Destroyed", value = _showDestroyed, style = { flexGrow = 0 }
+			};
+			destroyedToggle.RegisterValueChangedCallback(evt => { _showDestroyed = evt.newValue; });
+			row4.Add(destroyedToggle);
+
 			var maxEventsField = new IntegerField("Max Events")
 			{
 				value = _maxEvents,
@@ -338,12 +354,22 @@ namespace Beneton.ECS.Core.Editor
 				_componentExcludeFilter = string.Empty;
 				_systemFilter = string.Empty;
 				_systemExcludeFilter = string.Empty;
+				_showAdd = true;
+				_showUpdate = true;
+				_showRemove = true;
+				_showCreated = true;
+				_showDestroyed = true;
 				entityField.SetValueWithoutNotify(string.Empty);
 				entityExcludeField.SetValueWithoutNotify(string.Empty);
 				componentField.SetValueWithoutNotify(string.Empty);
 				componentExcludeField.SetValueWithoutNotify(string.Empty);
 				systemField.SetValueWithoutNotify(string.Empty);
 				excludeField.SetValueWithoutNotify(string.Empty);
+				addToggle.SetValueWithoutNotify(true);
+				updToggle.SetValueWithoutNotify(true);
+				remToggle.SetValueWithoutNotify(true);
+				createdToggle.SetValueWithoutNotify(true);
+				destroyedToggle.SetValueWithoutNotify(true);
 			})
 			{
 				text = "Reset Filters",
@@ -497,10 +523,7 @@ namespace Beneton.ECS.Core.Editor
 			if (Application.isPlaying && ECSDebugRef != null)
 			{
 				UpdateFilteredList();
-				if (ECSDebugRef.ComponentManager != null)
-				{
-					ECSDebugRef.ComponentManager.SetTimelineHandler(this);
-				}
+				ECSDebugRef.World?.SetTimelineHandler(this);
 			}
 		}
 
@@ -530,6 +553,8 @@ namespace Beneton.ECS.Core.Editor
 				TimelineEventType.UpdateComponent => "Updated",
 				TimelineEventType.RemoveComponent => "Removed",
 				TimelineEventType.RemoveAllComponents => "Removed all",
+				TimelineEventType.EntityCreated => "Created",
+				TimelineEventType.EntityDestroyed => "Destroyed",
 				_ => type.ToString()
 			};
 		}
@@ -538,10 +563,12 @@ namespace Beneton.ECS.Core.Editor
 		{
 			return type switch
 			{
-				TimelineEventType.AddComponent => new Color(0.36f, 1f, 0.36f),
-				TimelineEventType.UpdateComponent => new Color(1f, 1f, 0.35f),
-				TimelineEventType.RemoveComponent => new Color(1f, 0.35f, 0.42f),
-				TimelineEventType.RemoveAllComponents => new Color(1f, 0.35f, 0.42f),
+				TimelineEventType.AddComponent => new Color(0.36f, 1f, 0.36f), // Light Green
+				TimelineEventType.UpdateComponent => new Color(1f, 1f, 0.35f), // Light Yellow
+				TimelineEventType.RemoveComponent => new Color(1f, 0.35f, 0.42f), // Light Red
+				TimelineEventType.RemoveAllComponents => new Color(1f, 0.35f, 0.42f), // Light Red
+				TimelineEventType.EntityCreated => new Color(0.2f, 0.8f, 1f), // Bright Cyan
+				TimelineEventType.EntityDestroyed => new Color(0.8f, 0.4f, 1f), // Lavender/Purple
 				_ => Color.white
 			};
 		}
@@ -614,6 +641,16 @@ namespace Beneton.ECS.Core.Editor
 
 			if (!_showRemove && (ev.Type == TimelineEventType.RemoveComponent ||
 				ev.Type == TimelineEventType.RemoveAllComponents))
+			{
+				return false;
+			}
+
+			if (!_showCreated && ev.Type == TimelineEventType.EntityCreated)
+			{
+				return false;
+			}
+
+			if (!_showDestroyed && ev.Type == TimelineEventType.EntityDestroyed)
 			{
 				return false;
 			}
@@ -784,7 +821,7 @@ namespace Beneton.ECS.Core.Editor
 			Debug.Log($"ECS Timeline exported to {path}");
 		}
 
-		public void RegisterAddComponent(
+		void ITimelineHandler.RegisterAddComponent(
 			Entity entity,
 			string entityName,
 			int componentId,
@@ -808,7 +845,7 @@ namespace Beneton.ECS.Core.Editor
 				});
 		}
 
-		public void RegisterUpdateComponent(
+		void ITimelineHandler.RegisterUpdateComponent(
 			Entity entity,
 			string entityName,
 			int componentId,
@@ -832,7 +869,7 @@ namespace Beneton.ECS.Core.Editor
 				});
 		}
 
-		public void RegisterRemoveComponent(
+		void ITimelineHandler.RegisterRemoveComponent(
 			Entity entity,
 			string entityName,
 			int componentId,
@@ -856,7 +893,10 @@ namespace Beneton.ECS.Core.Editor
 				});
 		}
 
-		public void RegisterRemoveAllComponent(Entity entity, string entityName, string caller)
+		void ITimelineHandler.RegisterRemoveAllComponents(
+			Entity entity,
+			string entityName,
+			string caller)
 		{
 			if (!_isActive)
 			{
@@ -871,6 +911,40 @@ namespace Beneton.ECS.Core.Editor
 					ComponentName = "All",
 					CallerName = caller,
 					Type = TimelineEventType.RemoveAllComponents,
+					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
+				});
+		}
+
+		void ITimelineHandler.RegisterEntityCreation(
+			Entity entity,
+			string entityName,
+			string caller)
+		{
+			RegisterEvent(
+				new TimelineEvent
+				{
+					EntityId = entity.Id,
+					EntityName = entityName,
+					ComponentName = string.Empty,
+					CallerName = caller,
+					Type = TimelineEventType.EntityCreated,
+					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
+				});
+		}
+
+		void ITimelineHandler.RegisterEntityDestruction(
+			Entity entity,
+			string entityName,
+			string caller)
+		{
+			RegisterEvent(
+				new TimelineEvent
+				{
+					EntityId = entity.Id,
+					EntityName = entityName,
+					ComponentName = string.Empty,
+					CallerName = caller,
+					Type = TimelineEventType.EntityDestroyed,
 					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}

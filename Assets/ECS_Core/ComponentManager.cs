@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-#if UNITY_EDITOR
-using Beneton.ECS.Core.Editor;
-#endif
 
 namespace Beneton.ECS.Core
 {
@@ -27,11 +24,6 @@ namespace Beneton.ECS.Core
 		// Key is Entity.Id
 		private readonly SparseSet<Entity> _modifiedEntities = new();
 
-#if UNITY_EDITOR
-		public string CurrentExecutingBaker = string.Empty;
-		public string CurrentExecutingSystem = string.Empty;
-		private ITimelineHandler _timelineHandler;
-#endif
 		private readonly World _world;
 		private int _archetypeId = 1;
 
@@ -39,24 +31,6 @@ namespace Beneton.ECS.Core
 		{
 			_world = world;
 		}
-
-		internal void TryFindTimelineHandler()
-		{
-#if UNITY_EDITOR
-			var ecsTimeline = Resources.FindObjectsOfTypeAll<EcsTimeline>();
-			if (ecsTimeline is { Length: > 0 })
-			{
-				SetTimelineHandler(ecsTimeline[0]);
-			}
-#endif
-		}
-
-#if UNITY_EDITOR
-		internal void SetTimelineHandler(ITimelineHandler timelineHandler)
-		{
-			_timelineHandler = timelineHandler;
-		}
-#endif
 
 		public Archetype GetOrCreateArchetype(int[] required)
 		{
@@ -146,30 +120,7 @@ namespace Beneton.ECS.Core
 			}
 
 #if UNITY_EDITOR
-			if (_timelineHandler != null)
-			{
-				_world.TryGetGameObject(entity, out var gameObject);
-				var caller = "Unknown";
-				if (!string.IsNullOrEmpty(CurrentExecutingBaker) &&
-					!string.IsNullOrEmpty(CurrentExecutingSystem))
-				{
-					caller = $"{CurrentExecutingSystem} | {CurrentExecutingBaker}";
-				}
-				else if (!string.IsNullOrEmpty(CurrentExecutingSystem))
-				{
-					caller = CurrentExecutingSystem;
-				}
-				else if (!string.IsNullOrEmpty(CurrentExecutingBaker))
-				{
-					caller = CurrentExecutingBaker;
-				}
-
-				_timelineHandler.RegisterAddComponent(
-					entity,
-					gameObject.name,
-					typeId,
-					caller);
-			}
+			_world.RegisterAddComponent(entity, typeId);
 #endif
 
 			typedStorage.Set(entity, component);
@@ -202,15 +153,7 @@ namespace Beneton.ECS.Core
 			}
 
 #if UNITY_EDITOR
-			if (_timelineHandler != null)
-			{
-				_world.TryGetGameObject(entity, out var gameObject);
-				_timelineHandler.RegisterUpdateComponent(
-					entity,
-					gameObject.name,
-					typeId,
-					CurrentExecutingSystem);
-			}
+			_world.RegisterUpdateComponent(entity, typeId);
 #endif
 
 			typedStorage.Set(entity, component);
@@ -258,16 +201,8 @@ namespace Beneton.ECS.Core
 			_modifiedEntities.Set(entity, entity);
 
 #if UNITY_EDITOR
-			if (_timelineHandler != null)
-			{
-				_world.TryGetGameObject(entity, out var gameObject);
-				_timelineHandler.RegisterRemoveAllComponent(
-					entity,
-					gameObject.name,
-					CurrentExecutingSystem);
-			}
+			_world.RegisterRemoveAllComponents(entity);
 #endif
-
 			UpdateArchetypes(entity);
 		}
 
@@ -292,17 +227,8 @@ namespace Beneton.ECS.Core
 			if (TryGetTypedStorage<T>(out var typedStorage))
 			{
 #if UNITY_EDITOR
-				if (_timelineHandler != null)
-				{
-					_world.TryGetGameObject(entity, out var gameObject);
-					_timelineHandler.RegisterRemoveComponent(
-						entity,
-						gameObject.name,
-						typeId,
-						CurrentExecutingSystem);
-				}
+				_world.RegisterRemoveComponent(entity, typeId);
 #endif
-
 				typedStorage.Remove(entity);
 				_modifiedEntities.Set(entity, entity);
 			}
