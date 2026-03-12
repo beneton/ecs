@@ -16,6 +16,8 @@ namespace Beneton.ECS.Core.Editor
 	/// </summary>
 	public class EcsTimeline : EditorWindow, ITimelineHandler
 	{
+		public const string WindowName = "ECS Timeline";
+
 		// Key is Component.Id
 		private SparseSet<string> _componentNames;
 
@@ -72,10 +74,10 @@ namespace Beneton.ECS.Core.Editor
 		private VisualElement _filterSection;
 		private VisualElement _notPlayingLabel;
 
-		[MenuItem("Ecs Debug/Timeline")]
+		[MenuItem(DebugUtils.MenuItemPath + WindowName)]
 		public static void ShowWindow()
 		{
-			GetWindow<EcsTimeline>("Ecs Timeline");
+			GetWindow<EcsTimeline>(WindowName);
 		}
 
 		public void CreateGUI()

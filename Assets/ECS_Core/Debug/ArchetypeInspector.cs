@@ -17,6 +17,8 @@ namespace Beneton.ECS.Core.Editor
 	/// </summary>
 	public class ArchetypeInspector : EditorWindow
 	{
+		public const string WindowName = "Archetype Inspector";
+
 		private EcsDebugRef _ecsDebugRef;
 		private bool _isActive = true;
 		private string _searchFilter = string.Empty;
@@ -43,10 +45,10 @@ namespace Beneton.ECS.Core.Editor
 			public List<Entity> Entities = new();
 		}
 
-		[MenuItem("Ecs Debug/Archetype Inspector")]
+		[MenuItem(DebugUtils.MenuItemPath + WindowName)]
 		public static void ShowWindow()
 		{
-			GetWindow<ArchetypeInspector>("Archetype Inspector");
+			GetWindow<ArchetypeInspector>(WindowName);
 		}
 
 		private void CreateGUI()

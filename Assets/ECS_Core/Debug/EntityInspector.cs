@@ -17,6 +17,8 @@ namespace Beneton.ECS.Core.Editor
 	/// </summary>
 	public class EntityInspector : EditorWindow
 	{
+		public const string WindowName = "Entity Inspector";
+
 		[Serializable]
 		private class FormattedComponentData
 		{
@@ -57,10 +59,10 @@ namespace Beneton.ECS.Core.Editor
 		private readonly Dictionary<int, ComponentUI> _componentCache = new();
 		private List<int> _currentVisibleComponentIds = new();
 
-		[MenuItem("Ecs Debug/Entity Inspector")]
+		[MenuItem(DebugUtils.MenuItemPath + WindowName)]
 		public static void ShowWindow()
 		{
-			GetWindow<EntityInspector>("Entity Inspector");
+			GetWindow<EntityInspector>(WindowName);
 		}
 
 		private void OnEnable()
@@ -285,7 +287,7 @@ namespace Beneton.ECS.Core.Editor
 
 				var timelineButton = new Button(() =>
 				{
-					var timeline = GetWindow<EcsTimeline>("Ecs Timeline");
+					var timeline = GetWindow<EcsTimeline>(EcsTimeline.WindowName);
 					timeline.SetEntityFilter(entity.Id.ToString());
 					timeline.Focus();
 				})

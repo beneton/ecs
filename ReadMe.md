@@ -36,3 +36,13 @@ The repository includes a **Demo** folder containing a small, practical example.
 *   **SparseSet:** Used internally for high-performance mapping of entities to components. It provides O(1) lookup, insertion, and removal while keeping data contiguous in memory for cache-friendly iteration.
 *   **DistributedSystem:** A specialized system type that allows you to distribute logic among multiple `ISystemNode` instances. This is particularly useful for bridging Unity MonoBehaviours (like input handlers) into the ECS flow while ensuring that any change made to an Entity or Component is applied at a safe moment.
 *   **SingletonComponents:** Components marked with `ISingletonComponent` are guaranteed to have only one instance per World. They are ideal for global state, configuration settings, or unique markers that shouldn't be duplicated across multiple entities.
+
+### 6. Debugging
+**Ecs_Core** provides a set of powerful debugging tools to help you visualize and troubleshoot your ECS world:
+
+*   **ArchetypeInspector:** A visual tool that lists all existing archetypes, their component compositions, and the entities within them. It's useful for understanding how entities are grouped and verifying that they have the expected set of components.
+*   **EntityInspector:** Provides a detailed view of individual entities. It allows you to inspect all components attached to an entity and their current data values, making it easier to track state changes during runtime.
+*   **EcsTimeline:** A diagnostic tool that logs and displays a chronological history of ECS events, such as adding, updating, or removing components. It helps in identifying when and where state changes occur, providing better visibility into the system's execution flow.
+
+While in the Unity Editor, all entities will have a GameObject representation in the Hierarchy Window. This way it is possible to quickly find a specific Entity of interest and use the EntityInspector to get inspect its Components
+These tools can be found in the menu **Window/Ecs_Core**, but this repository also provide **UnityInterfaceLayoutForECS.wlt**, a layout that can be loaded in Unity Editor to set a recommended window layout when working with Ecs_Core 
