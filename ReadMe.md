@@ -41,8 +41,13 @@ The repository includes a **Demo** folder containing a small, practical example.
 **Ecs_Core** provides a set of powerful debugging tools to help you visualize and troubleshoot your ECS world:
 
 *   **ArchetypeInspector:** A visual tool that lists all existing archetypes, their component compositions, and the entities within them. It's useful for understanding how entities are grouped and verifying that they have the expected set of components.
+<img width="284" height="820" alt="ArchetypeInspector" src="https://github.com/user-attachments/assets/6d44b320-e427-48e1-959e-3e313abbee47" />
+
 *   **EntityInspector:** Provides a detailed view of individual entities. It allows you to inspect all components attached to an entity and their current data values, making it easier to track state changes during runtime.
+<img width="295" height="547" alt="EntityInspector" src="https://github.com/user-attachments/assets/30521bd0-380f-4876-b73f-f70be8a2da7e" />
+
 *   **EcsTimeline:** A diagnostic tool that logs and displays a chronological history of ECS events, such as adding, updating, or removing components. It helps in identifying when and where state changes occur, providing better visibility into the system's execution flow.
+<img width="915" height="629" alt="EcsTimeline" src="https://github.com/user-attachments/assets/8d502cad-b506-4e1c-964e-0c85ceaca7a5" />
 
 While in the Unity Editor, all entities will have a GameObject representation in the Hierarchy Window. This way it is possible to quickly find a specific Entity of interest and use the EntityInspector to get inspect its Components
 These tools can be found in the menu **Window/Ecs_Core**, but this repository also provide **UnityInterfaceLayoutForECS.wlt**, a layout that can be loaded in Unity Editor to set a recommended window layout when working with Ecs_Core 
