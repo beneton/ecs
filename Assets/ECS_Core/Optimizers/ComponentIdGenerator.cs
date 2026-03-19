@@ -49,9 +49,6 @@ namespace Beneton.ECS.Core.CodeGen
 			nameof(ISingletonComponent)
 		};
 
-		private const string IdProviderClass = nameof(ComponentTypeIdProvider);
-		private const string IdProviderMethod = nameof(ComponentTypeIdProvider.Next);
-
 		// Root folder to scan for components
 		private const string ScanRoot = "Assets";
 
@@ -96,6 +93,8 @@ namespace Beneton.ECS.Core.CodeGen
 				.GroupBy(c => c.Namespace ?? string.Empty)
 				.OrderBy(g => g.Key);
 
+			var compId = 1;
+
 			foreach (var group in byNamespace)
 			{
 				var ns = group.Key;
@@ -109,14 +108,14 @@ namespace Beneton.ECS.Core.CodeGen
 				foreach (var c in group.OrderBy(c => c.Name))
 				{
 					sb.AppendLine("    [Serializable] ");
-					sb.AppendLine("    public partial struct " + c.Name);
+					sb.AppendLine($"    public partial struct {c.Name}");
 					sb.AppendLine("    {");
-					sb.AppendLine(
-						"        public static int Id { get; } = " + IdProviderClass + "." +
-						IdProviderMethod + "();");
-					sb.AppendLine("        public int TypeId => Id;");
+					sb.AppendLine($"        public static int Id => {compId.ToString()};");
+					sb.AppendLine($"        public int TypeId => Id;");
 					sb.AppendLine("    }");
 					sb.AppendLine();
+
+					compId++;
 				}
 
 				if (!string.IsNullOrEmpty(ns))
