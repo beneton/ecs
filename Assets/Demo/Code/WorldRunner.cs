@@ -49,7 +49,7 @@ namespace ECSSample
 			_world.AddSystem<TravelLogUpdateSystem>();
 			_world.AddSystem<EntityCounterUpdateSystem>();
 
-			_world.Start(FindObjectsInactive.Exclude);
+			_world.Start();
 		}
 
 		private void Update()

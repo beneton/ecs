@@ -34,8 +34,13 @@ namespace Beneton.ECS.Core
 
 		private readonly ComponentManager _componentManager;
 
-		public World()
+		private readonly FindObjectsInactive _inactiveObjectsPolicy;
+
+		public World(bool considerInactiveGameObjects = false)
 		{
+			_inactiveObjectsPolicy = considerInactiveGameObjects
+				? FindObjectsInactive.Include
+				: FindObjectsInactive.Exclude;
 			_componentManager = new ComponentManager(this);
 
 #if UNITY_EDITOR
@@ -238,15 +243,13 @@ namespace Beneton.ECS.Core
 			}
 		}
 
-		public void Start(FindObjectsInactive inactiveObjectsPolicy)
+		public void Start()
 		{
 #if UNITY_EDITOR
 			_currentExecutingSystem = "World Start";
 #endif
 			// Find all existing Bakers and Bake them
-			var allBakers = Object.FindObjectsByType<Baker>(
-				inactiveObjectsPolicy,
-				FindObjectsSortMode.None);
+			var allBakers = Object.FindObjectsByType<Baker>(_inactiveObjectsPolicy);
 
 			foreach (var baker in allBakers)
 			{
@@ -254,9 +257,7 @@ namespace Beneton.ECS.Core
 			}
 
 			// Find all SystemNodes and Register them
-			var allTransforms = Object.FindObjectsByType<Transform>(
-					inactiveObjectsPolicy,
-					FindObjectsSortMode.None)
+			var allTransforms = Object.FindObjectsByType<Transform>(_inactiveObjectsPolicy)
 				.ToArray();
 
 			foreach (var transform in allTransforms)
