@@ -2,7 +2,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// Baker responsible for providing a reference to the Travel Log distance UI text.

@@ -1,6 +1,6 @@
 using Beneton.ECS.Core;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// A marker component used to indicate that an entity has been clicked, often used to trigger interaction logic.

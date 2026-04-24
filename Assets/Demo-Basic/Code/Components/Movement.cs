@@ -1,7 +1,7 @@
 using Beneton.ECS.Core;
 using UnityEngine;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// Contains core movement data, including speed, direction, and a reference to the entity's Unity <see cref="Transform"/>.

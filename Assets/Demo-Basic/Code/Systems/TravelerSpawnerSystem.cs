@@ -1,8 +1,8 @@
 using Beneton.ECS.Core;
-using ECSSample.Components;
+using ECS.Demo.Basic.Components;
 using UnityEngine;
 
-namespace ECSSample.Systems
+namespace ECS.Demo.Basic.Systems
 {
 	/// <summary>
 	/// Detects <see cref="Clicked"/> events on <see cref="AddTravelerButton"/> components and spawns new traveler entities from a prefab.

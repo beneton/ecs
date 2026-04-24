@@ -1,6 +1,6 @@
 using Beneton.ECS.Core;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// Indicates that an entity is currently moving and tracks the duration of the current movement state.

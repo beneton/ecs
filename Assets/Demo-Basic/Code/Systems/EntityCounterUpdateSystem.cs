@@ -1,7 +1,7 @@
 ﻿using Beneton.ECS.Core;
-using ECSSample.Components;
+using ECS.Demo.Basic.Components;
 
-namespace ECSSample.Systems
+namespace ECS.Demo.Basic.Systems
 {
 	/// <summary>
 	/// Updates the <see cref="EntityCounter"/> singleton UI to display the current total number of entities in the <see cref="World"/>.

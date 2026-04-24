@@ -5,7 +5,7 @@
 using Beneton.ECS.Core;
 using System;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
     [Serializable] 
     public partial struct AddTravelerButton

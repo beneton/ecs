@@ -1,7 +1,7 @@
 ﻿using Beneton.ECS.Core;
-using ECSSample.Components;
+using ECS.Demo.Basic.Components;
 
-namespace ECSSample.Systems
+namespace ECS.Demo.Basic.Systems
 {
 	/// <summary>
 	/// Updates the <see cref="TravelLog"/> singleton UI to display the accumulated total distance traveled by all entities.

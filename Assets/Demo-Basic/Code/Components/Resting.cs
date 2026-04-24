@@ -1,6 +1,6 @@
 using Beneton.ECS.Core;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// Indicates that an entity is currently resting and tracks the remaining duration of the resting state.

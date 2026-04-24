@@ -1,9 +1,9 @@
 using Beneton.ECS.Core;
-using ECSSample.Systems;
+using ECS.Demo.Basic.Systems;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// Baker responsible for initializing the Add Traveler UI button.

@@ -1,8 +1,8 @@
 using Beneton.ECS.Core;
-using ECSSample.Components;
+using ECS.Demo.Basic.Components;
 using UnityEngine;
 
-namespace ECSSample.Systems
+namespace ECS.Demo.Basic.Systems
 {
 	/// <summary>
 	/// Updates traveler visuals, such as swapping materials between moving and resting states, using cached <see cref="EcsMeshRenderers"/>.

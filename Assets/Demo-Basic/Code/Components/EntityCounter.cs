@@ -1,7 +1,7 @@
 ﻿using Beneton.ECS.Core;
 using TMPro;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// A singleton component that provides a reference to a UI text field for displaying the total entity count.

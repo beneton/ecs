@@ -1,8 +1,8 @@
 ﻿using Beneton.ECS.Core;
-using ECSSample.Systems;
+using ECS.Demo.Basic.Systems;
 using UnityEngine;
 
-namespace ECSSample
+namespace ECS.Demo.Basic
 {
 	/// <summary>
 	/// Acts as the main entry point and orchestrator for the ECS lifecycle within the Unity scene.

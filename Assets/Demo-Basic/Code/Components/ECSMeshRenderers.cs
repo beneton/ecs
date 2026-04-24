@@ -1,7 +1,7 @@
 using Beneton.ECS.Core;
 using UnityEngine;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// Caches Unity <see cref="MeshRenderer"/> references for an entity, allowing ECS systems to modify visual properties.

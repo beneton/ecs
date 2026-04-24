@@ -1,10 +1,10 @@
 using Beneton.ECS.Core;
-using ECSSample.Systems;
+using ECS.Demo.Basic.Systems;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// Baker responsible for initializing a Traveler entity.

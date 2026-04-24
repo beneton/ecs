@@ -1,7 +1,7 @@
 using Beneton.ECS.Core;
 using TMPro;
 
-namespace ECSSample.Components
+namespace ECS.Demo.Basic.Components
 {
 	/// <summary>
 	/// A singleton component that tracks the total distance traveled by all entities and provides a reference to the UI for display.

@@ -1,7 +1,7 @@
 ﻿using Beneton.ECS.Core;
-using ECSSample.Components;
+using ECS.Demo.Basic.Components;
 
-namespace ECSSample.Systems
+namespace ECS.Demo.Basic.Systems
 {
 	/// <summary>
 	/// Removes transient state tags like <see cref="StartedMoving"/> <see cref="StartedResting"/> at the beginning of the frame.
