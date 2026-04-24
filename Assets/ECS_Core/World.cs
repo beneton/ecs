@@ -26,6 +26,8 @@ namespace Beneton.ECS.Core
 		private readonly SparseSet<SystemCommandBufferPair> _systems = new();
 		private readonly SparseSet<SystemCommandBufferPair> _lateSystems = new();
 
+		private readonly SparseSet<WorldState> _worldStates = new();
+
 		private readonly SparseSet<Entity> _entities = new();
 		private readonly SparseSet<GameObject> _entityGameObjectLookup = new();
 
@@ -58,6 +60,18 @@ namespace Beneton.ECS.Core
 #endif
 		}
 
+		private WorldState _currentState;
+
+		public void RegisterState(WorldState state)
+		{
+			_worldStates.Set(state.Id, state);
+		}
+
+		public void SetState(WorldState state)
+		{
+			_currentState = state;
+		}
+
 		public T AddSystem<T>() where T : BaseSystem, new()
 		{
 			return AddSystem(new T(), _systems);
@@ -88,6 +102,7 @@ namespace Beneton.ECS.Core
 				CommandBuffer = commandBuffer
 			};
 
+			system.Id = _systemId;
 			systemCollection.Set(_systemId, pair);
 			system.OnCreate(_componentManager);
 			_systemId++;
@@ -276,26 +291,47 @@ namespace Beneton.ECS.Core
 
 		public void Update(float deltaTime)
 		{
-			foreach (var pair in _systems.Values)
+			if (_currentState != null)
 			{
-#if UNITY_EDITOR
-				_currentExecutingSystem = pair.System.GetType().Name;
-#endif
-				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
-				pair.CommandBuffer.Execute(_componentManager);
+				foreach (var systemId in _currentState.Systems)
+				{
+					UpdateSystem(deltaTime, _systems.Get(systemId));
+				}
+			}
+			else
+			{
+				foreach (var pair in _systems.Values)
+				{
+					UpdateSystem(deltaTime, pair);
+				}
 			}
 		}
 
 		public void LateUpdate(float deltaTime)
 		{
-			foreach (var pair in _lateSystems.Values)
+			if (_currentState != null)
 			{
-#if UNITY_EDITOR
-				_currentExecutingSystem = pair.System.GetType().Name;
-#endif
-				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
-				pair.CommandBuffer.Execute(_componentManager);
+				foreach (var systemId in _currentState.LateSystems)
+				{
+					UpdateSystem(deltaTime, _lateSystems.Get(systemId));
+				}
 			}
+			else
+			{
+				foreach (var pair in _lateSystems.Values)
+				{
+					UpdateSystem(deltaTime, pair);
+				}
+			}
+		}
+
+		private void UpdateSystem(float deltaTime, SystemCommandBufferPair pair)
+		{
+#if UNITY_EDITOR
+			_currentExecutingSystem = pair.System.GetType().Name;
+#endif
+			pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
+			pair.CommandBuffer.Execute(_componentManager);
 		}
 
 #if UNITY_EDITOR

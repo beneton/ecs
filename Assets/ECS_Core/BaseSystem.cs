@@ -7,6 +7,8 @@ namespace Beneton.ECS.Core
 	/// </summary>
 	public abstract class BaseSystem
 	{
+		internal int Id;
+		
 		public abstract void OnCreate(IArchetypeProvider archetypeProvider);
 
 		public abstract void Update(
