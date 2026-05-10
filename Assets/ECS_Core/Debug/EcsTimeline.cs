@@ -64,7 +64,7 @@ namespace Beneton.ECS.Core.Editor
 			{
 				if (_ecsDebugRef == null)
 				{
-					_ecsDebugRef = FindFirstObjectByType<EcsDebugRef>();
+					_ecsDebugRef = FindAnyObjectByType<EcsDebugRef>();
 				}
 
 				return _ecsDebugRef;

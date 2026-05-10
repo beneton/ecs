@@ -59,6 +59,8 @@ namespace Beneton.ECS.Core.Editor
 		private readonly Dictionary<int, ComponentUI> _componentCache = new();
 		private List<int> _currentVisibleComponentIds = new();
 
+		private bool _hasUI = false;
+
 		[MenuItem(DebugUtils.MenuItemPath + WindowName)]
 		public static void ShowWindow()
 		{
@@ -77,6 +79,8 @@ namespace Beneton.ECS.Core.Editor
 
 		public void CreateGUI()
 		{
+			_hasUI = true;
+
 			// Toolbar
 			var toolbar = new Toolbar { style = { flexShrink = 0 } };
 
@@ -182,6 +186,11 @@ namespace Beneton.ECS.Core.Editor
 
 		private void UpdateUI()
 		{
+			if (!_hasUI)
+			{
+				return;
+			}
+
 			if (!Application.isPlaying)
 			{
 				_statusLabel.text = "Only works in play mode";
@@ -208,7 +217,7 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			_ecsDebugRef ??= FindFirstObjectByType<EcsDebugRef>();
+			_ecsDebugRef ??= FindAnyObjectByType<EcsDebugRef>();
 			if (_ecsDebugRef == null)
 			{
 				_statusLabel.text = "Waiting for ECS initialization...";
