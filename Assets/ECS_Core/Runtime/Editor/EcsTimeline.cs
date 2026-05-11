@@ -1,4 +1,5 @@
 ﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -34,6 +35,9 @@ namespace Beneton.ECS.Core.Editor
 			}
 		}
 
+		private string _currentExecutingBaker = string.Empty;
+		private string _currentExecutingSystem = string.Empty;
+
 		private bool _isActive = true;
 		private bool _autoSelectInHierarchy = true;
 
@@ -56,18 +60,18 @@ namespace Beneton.ECS.Core.Editor
 
 		private static readonly char[] FilterChars = { ',' };
 
-		private EcsDebugRef _ecsDebugRef;
+		private EcsInspectorsHelper _ecsInspectorsHelper;
 
-		private EcsDebugRef ECSDebugRef
+		private EcsInspectorsHelper EcsInspectorsHelper
 		{
 			get
 			{
-				if (_ecsDebugRef == null)
+				if (_ecsInspectorsHelper == null)
 				{
-					_ecsDebugRef = FindAnyObjectByType<EcsDebugRef>();
+					_ecsInspectorsHelper = FindAnyObjectByType<EcsInspectorsHelper>();
 				}
 
-				return _ecsDebugRef;
+				return _ecsInspectorsHelper;
 			}
 		}
 
@@ -82,7 +86,7 @@ namespace Beneton.ECS.Core.Editor
 			GetWindow<EcsTimeline>(WindowName);
 		}
 
-		public void CreateGUI()
+		private void CreateGUI()
 		{
 			var root = rootVisualElement;
 
@@ -487,12 +491,21 @@ namespace Beneton.ECS.Core.Editor
 			RefreshVisibility();
 
 			// Schedule update
-			rootVisualElement.schedule.Execute(UpdateUI).Every(100);
+			_updateUiScheduleItem = rootVisualElement.schedule.Execute(UpdateUI).Every(100);
+		}
+
+		private IVisualElementScheduledItem _updateUiScheduleItem;
+
+		private void OnDestroy()
+		{
+			_updateUiScheduleItem.Pause();
+			_updateUiScheduleItem = null;
+			EcsInspectorsHelper?.World?.SetTimelineHandler(new StubTimelineHandler());
 		}
 
 		private void OnSelectionChanged(IEnumerable<object> selection)
 		{
-			if (!_autoSelectInHierarchy || !Application.isPlaying || ECSDebugRef == null)
+			if (!_autoSelectInHierarchy || !Application.isPlaying || EcsInspectorsHelper == null)
 			{
 				return;
 			}
@@ -502,7 +515,7 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			var world = ECSDebugRef.World;
+			var world = EcsInspectorsHelper.World;
 			if (world == null)
 			{
 				return;
@@ -520,10 +533,10 @@ namespace Beneton.ECS.Core.Editor
 		{
 			RefreshVisibility();
 
-			if (Application.isPlaying && ECSDebugRef != null)
+			if (Application.isPlaying && EcsInspectorsHelper != null)
 			{
 				UpdateFilteredList();
-				ECSDebugRef.World?.SetTimelineHandler(this);
+				EcsInspectorsHelper.World?.SetTimelineHandler(this);
 			}
 		}
 
@@ -821,11 +834,7 @@ namespace Beneton.ECS.Core.Editor
 			Debug.Log($"ECS Timeline exported to {path}");
 		}
 
-		void ITimelineHandler.RegisterAddComponent(
-			Entity entity,
-			string entityName,
-			int componentId,
-			string caller)
+		void ITimelineHandler.RegisterAddComponent(Entity entity, World world, int componentId)
 		{
 			if (!_isActive)
 			{
@@ -837,19 +846,15 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
-					EntityName = entityName,
+					EntityName = ComposeEntityName(entity, world),
 					ComponentName = componentName,
-					CallerName = caller,
+					CallerName = ComposeCallerString(),
 					Type = TimelineEventType.AddComponent,
 					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
-		void ITimelineHandler.RegisterUpdateComponent(
-			Entity entity,
-			string entityName,
-			int componentId,
-			string caller)
+		void ITimelineHandler.RegisterUpdateComponent(Entity entity, World world, int componentId)
 		{
 			if (!_isActive)
 			{
@@ -861,19 +866,15 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
-					EntityName = entityName,
+					EntityName = ComposeEntityName(entity, world),
 					ComponentName = componentName,
-					CallerName = caller,
+					CallerName = ComposeCallerString(),
 					Type = TimelineEventType.UpdateComponent,
 					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
-		void ITimelineHandler.RegisterRemoveComponent(
-			Entity entity,
-			string entityName,
-			int componentId,
-			string caller)
+		void ITimelineHandler.RegisterRemoveComponent(Entity entity, World world, int componentId)
 		{
 			if (!_isActive)
 			{
@@ -885,18 +886,15 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
-					EntityName = entityName,
+					EntityName = ComposeEntityName(entity, world),
 					ComponentName = componentName,
-					CallerName = caller,
+					CallerName = ComposeCallerString(),
 					Type = TimelineEventType.RemoveComponent,
 					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
-		void ITimelineHandler.RegisterRemoveAllComponents(
-			Entity entity,
-			string entityName,
-			string caller)
+		void ITimelineHandler.RegisterRemoveAllComponents(Entity entity, World world)
 		{
 			if (!_isActive)
 			{
@@ -907,43 +905,47 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
-					EntityName = entityName,
+					EntityName = ComposeEntityName(entity, world),
 					ComponentName = "All",
-					CallerName = caller,
+					CallerName = ComposeCallerString(),
 					Type = TimelineEventType.RemoveAllComponents,
 					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
-		void ITimelineHandler.RegisterEntityCreation(
-			Entity entity,
-			string entityName,
-			string caller)
+		void ITimelineHandler.RegisterEntityCreation(Entity entity, World world)
 		{
+			if (!_isActive)
+			{
+				return;
+			}
+
 			RegisterEvent(
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
-					EntityName = entityName,
+					EntityName = ComposeEntityName(entity, world),
 					ComponentName = string.Empty,
-					CallerName = caller,
+					CallerName = ComposeCallerString(),
 					Type = TimelineEventType.EntityCreated,
 					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
 		}
 
-		void ITimelineHandler.RegisterEntityDestruction(
-			Entity entity,
-			string entityName,
-			string caller)
+		void ITimelineHandler.RegisterEntityDestruction(Entity entity, World world)
 		{
+			if (!_isActive)
+			{
+				return;
+			}
+
 			RegisterEvent(
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
-					EntityName = entityName,
+					EntityName = ComposeEntityName(entity, world),
 					ComponentName = string.Empty,
-					CallerName = caller,
+					CallerName = ComposeCallerString(),
 					Type = TimelineEventType.EntityDestroyed,
 					FormattedTiming = $"[{Time.frameCount}] ({Time.realtimeSinceStartup:F2}s)"
 				});
@@ -957,6 +959,63 @@ namespace Beneton.ECS.Core.Editor
 			}
 
 			_eventEntries.Add(ev);
+		}
+
+		void ITimelineHandler.SetExecutingBaker(Baker baker)
+		{
+			if (!_isActive)
+			{
+				return;
+			}
+
+			_currentExecutingBaker = baker != null ? baker.GetType().Name : string.Empty;
+		}
+
+		void ITimelineHandler.SetExecutingSystem(string systemName)
+		{
+			if (!_isActive)
+			{
+				return;
+			}
+
+			_currentExecutingSystem = systemName;
+		}
+
+		void ITimelineHandler.SetExecutingSystem(BaseSystem system)
+		{
+			if (!_isActive)
+			{
+				return;
+			}
+
+			_currentExecutingSystem = system != null ? system.GetType().Name : string.Empty;
+		}
+
+		private static string ComposeEntityName(Entity entity, World world)
+		{
+			return world.TryGetGameObject(entity, out var gameObject)
+				? gameObject.name
+				: "Unknown";
+		}
+
+		private string ComposeCallerString()
+		{
+			var caller = "Unknown";
+			if (!string.IsNullOrEmpty(_currentExecutingBaker) &&
+				!string.IsNullOrEmpty(_currentExecutingSystem))
+			{
+				caller = $"{_currentExecutingSystem} | {_currentExecutingBaker}";
+			}
+			else if (!string.IsNullOrEmpty(_currentExecutingSystem))
+			{
+				caller = _currentExecutingSystem;
+			}
+			else if (!string.IsNullOrEmpty(_currentExecutingBaker))
+			{
+				caller = _currentExecutingBaker;
+			}
+
+			return caller;
 		}
 	}
 }

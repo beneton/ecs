@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Beneton.ECS.Core
@@ -119,9 +120,7 @@ namespace Beneton.ECS.Core
 				return;
 			}
 
-#if UNITY_EDITOR
 			_world.RegisterAddComponent(entity, typeId);
-#endif
 
 			typedStorage.Set(entity, component);
 			_modifiedEntities.Set(entity, entity);
@@ -152,9 +151,7 @@ namespace Beneton.ECS.Core
 				return;
 			}
 
-#if UNITY_EDITOR
 			_world.RegisterUpdateComponent(entity, typeId);
-#endif
 
 			typedStorage.Set(entity, component);
 		}
@@ -200,9 +197,8 @@ namespace Beneton.ECS.Core
 
 			_modifiedEntities.Set(entity, entity);
 
-#if UNITY_EDITOR
 			_world.RegisterRemoveAllComponents(entity);
-#endif
+
 			UpdateArchetypes(entity);
 		}
 
@@ -226,9 +222,8 @@ namespace Beneton.ECS.Core
 
 			if (TryGetTypedStorage<T>(out var typedStorage))
 			{
-#if UNITY_EDITOR
 				_world.RegisterRemoveComponent(entity, typeId);
-#endif
+
 				typedStorage.Remove(entity);
 				_modifiedEntities.Set(entity, entity);
 			}

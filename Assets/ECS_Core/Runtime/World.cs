@@ -1,10 +1,8 @@
 using System;
 using System.Linq;
+using Beneton.ECS.Core.Editor;
 using UnityEngine;
 using Object = UnityEngine.Object;
-#if UNITY_EDITOR
-using Beneton.ECS.Core.Editor;
-#endif
 
 namespace Beneton.ECS.Core
 {
@@ -33,8 +31,11 @@ namespace Beneton.ECS.Core
 		private int _systemId = 1;
 
 		private readonly ComponentManager _componentManager;
+		internal ComponentManager ComponentManager => _componentManager;
 
 		private readonly FindObjectsInactive _inactiveObjectsPolicy;
+
+		private ITimelineHandler _timelineHandler;
 
 		public World(bool considerInactiveGameObjects = false)
 		{
@@ -42,13 +43,14 @@ namespace Beneton.ECS.Core
 				? FindObjectsInactive.Include
 				: FindObjectsInactive.Exclude;
 			_componentManager = new ComponentManager(this);
+			_timelineHandler = new StubTimelineHandler();
 
 #if UNITY_EDITOR
 			// Needed support object to enable debug inspector windows
-			var debugGo = new GameObject("ECS-Debug");
-			var debugRef = debugGo.AddComponent<EcsDebugRef>();
-			debugRef.World = this;
-			debugRef.ComponentManager = _componentManager;
+			var inspectorHelperGo = new GameObject("ECS-Inspector-Helper");
+			var inspectorHelper = inspectorHelperGo.AddComponent<EcsInspectorsHelper>();
+			inspectorHelper.World = this;
+			inspectorHelper.ComponentManager = _componentManager;
 
 			var ecsTimeline = Resources.FindObjectsOfTypeAll<EcsTimeline>();
 			if (ecsTimeline is { Length: > 0 })
@@ -56,6 +58,11 @@ namespace Beneton.ECS.Core
 				SetTimelineHandler(ecsTimeline[0]);
 			}
 #endif
+		}
+
+		internal void SetTimelineHandler(ITimelineHandler timelineHandler)
+		{
+			_timelineHandler = timelineHandler;
 		}
 
 		public T AddSystem<T>() where T : BaseSystem, new()
@@ -98,13 +105,10 @@ namespace Beneton.ECS.Core
 		public void Bake(Baker baker)
 		{
 			var entity = GetOrCreateEntity(baker.gameObject);
-#if UNITY_EDITOR
-			_currentExecutingBaker = baker.GetType().Name;
-#endif
+
+			_timelineHandler.SetExecutingBaker(baker);
 			baker.Bake(entity, _componentManager, this);
-#if UNITY_EDITOR
-			_currentExecutingBaker = string.Empty;
-#endif
+			_timelineHandler.SetExecutingBaker(null);
 		}
 
 		public Entity CreateEntity(string entityName)
@@ -134,9 +138,8 @@ namespace Beneton.ECS.Core
 			var entity = InternalCreateEntity();
 			_entityGameObjectLookup.Set(entity, gameObject);
 			gameObject.name += $" [{entity.Id.ToString()}]";
-#if UNITY_EDITOR
-			RegisterEntityCreation(entity);
-#endif
+
+			_timelineHandler.RegisterEntityCreation(entity, this);
 			return entity;
 		}
 
@@ -188,14 +191,11 @@ namespace Beneton.ECS.Core
 			var bakers = instance.GetComponentsInChildren<Baker>(false);
 			foreach (var baker in bakers)
 			{
-#if UNITY_EDITOR
-				_currentExecutingBaker = baker.GetType().Name;
-#endif
+				_timelineHandler.SetExecutingBaker(baker);
 				baker.Bake(entity, _componentManager, this);
 			}
-#if UNITY_EDITOR
-			_currentExecutingBaker = string.Empty;
-#endif
+
+			_timelineHandler.SetExecutingBaker(null);
 
 			// Register any SystemNode present on the Instance
 			var allNodes = instance.GetComponentsInChildren<ISystemNode>();
@@ -211,9 +211,7 @@ namespace Beneton.ECS.Core
 
 		public void DestroyEntity(Entity entity)
 		{
-#if UNITY_EDITOR
-			RegisterEntityDestruction(entity);
-#endif
+			_timelineHandler.RegisterEntityDestruction(entity, this);
 
 			_entities.Remove(entity);
 			_componentManager.RemoveAllComponents(entity);
@@ -245,9 +243,7 @@ namespace Beneton.ECS.Core
 
 		public void Start()
 		{
-#if UNITY_EDITOR
-			_currentExecutingSystem = "World Start";
-#endif
+			_timelineHandler.SetExecutingSystem("World Start");
 			// Find all existing Bakers and Bake them
 			var allBakers = Object.FindObjectsByType<Baker>(_inactiveObjectsPolicy);
 
@@ -278,9 +274,7 @@ namespace Beneton.ECS.Core
 		{
 			foreach (var pair in _systems.Values)
 			{
-#if UNITY_EDITOR
-				_currentExecutingSystem = pair.System.GetType().Name;
-#endif
+				_timelineHandler.SetExecutingSystem(pair.System);
 				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
 				pair.CommandBuffer.Execute(_componentManager);
 			}
@@ -290,104 +284,30 @@ namespace Beneton.ECS.Core
 		{
 			foreach (var pair in _lateSystems.Values)
 			{
-#if UNITY_EDITOR
-				_currentExecutingSystem = pair.System.GetType().Name;
-#endif
+				_timelineHandler.SetExecutingSystem(pair.System);
 				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
 				pair.CommandBuffer.Execute(_componentManager);
 			}
 		}
 
-#if UNITY_EDITOR
-		private string _currentExecutingBaker = string.Empty;
-		private string _currentExecutingSystem = string.Empty;
-		private ITimelineHandler _timelineHandler;
-
-		internal void SetTimelineHandler(ITimelineHandler timelineHandler)
-		{
-			_timelineHandler = timelineHandler;
-		}
-
-		private void RegisterEntityCreation(Entity entity)
-		{
-			_timelineHandler?.RegisterEntityCreation(
-				entity,
-				ComposeEntityName(entity),
-				ComposeCallerString());
-		}
-
-		private void RegisterEntityDestruction(Entity entity)
-		{
-			_timelineHandler?.RegisterEntityDestruction(
-				entity,
-				ComposeEntityName(entity),
-				ComposeCallerString());
-		}
-
 		internal void RegisterAddComponent(Entity entity, int componentId)
 		{
-			_timelineHandler?.RegisterAddComponent(
-				entity,
-				ComposeEntityName(entity),
-				componentId,
-				ComposeCallerString());
+			_timelineHandler.RegisterAddComponent(entity, this, componentId);
 		}
 
 		internal void RegisterUpdateComponent(Entity entity, int componentId)
 		{
-			_timelineHandler?.RegisterUpdateComponent(
-				entity,
-				ComposeEntityName(entity),
-				componentId,
-				ComposeCallerString());
+			_timelineHandler.RegisterUpdateComponent(entity, this, componentId);
 		}
 
 		internal void RegisterRemoveComponent(Entity entity, int componentId)
 		{
-			_timelineHandler?.RegisterRemoveComponent(
-				entity,
-				ComposeEntityName(entity),
-				componentId,
-				ComposeCallerString());
+			_timelineHandler.RegisterRemoveComponent(entity, this, componentId);
 		}
 
 		internal void RegisterRemoveAllComponents(Entity entity)
 		{
-			_timelineHandler?.RegisterRemoveAllComponents(
-				entity,
-				ComposeEntityName(entity),
-				ComposeCallerString());
+			_timelineHandler.RegisterRemoveAllComponents(entity, this);
 		}
-
-		private string ComposeEntityName(Entity entity)
-		{
-			if (TryGetGameObject(entity, out var gameObject))
-			{
-				return gameObject.name;
-			}
-
-			return "Unknown";
-		}
-
-		private string ComposeCallerString()
-		{
-			var caller = "Unknown";
-			if (!string.IsNullOrEmpty(_currentExecutingBaker) &&
-				!string.IsNullOrEmpty(_currentExecutingSystem))
-			{
-				caller = $"{_currentExecutingSystem} | {_currentExecutingBaker}";
-			}
-			else if (!string.IsNullOrEmpty(_currentExecutingSystem))
-			{
-				caller = _currentExecutingSystem;
-			}
-			else if (!string.IsNullOrEmpty(_currentExecutingBaker))
-			{
-				caller = _currentExecutingBaker;
-			}
-
-			return caller;
-		}
-#endif
 	}
 }

@@ -41,7 +41,7 @@ namespace Beneton.ECS.Core.Editor
 			public IComponent Component;
 		}
 
-		private EcsDebugRef _ecsDebugRef;
+		private EcsInspectorsHelper _ecsInspectorsHelper;
 		private bool _isActive = true;
 		private bool _orderByName = false;
 		private string _searchFilter = string.Empty;
@@ -59,28 +59,14 @@ namespace Beneton.ECS.Core.Editor
 		private readonly Dictionary<int, ComponentUI> _componentCache = new();
 		private List<int> _currentVisibleComponentIds = new();
 
-		private bool _hasUI = false;
-
 		[MenuItem(DebugUtils.MenuItemPath + WindowName)]
 		public static void ShowWindow()
 		{
 			GetWindow<EntityInspector>(WindowName);
 		}
 
-		private void OnEnable()
-		{
-			Selection.selectionChanged += UpdateUI;
-		}
-
-		private void OnDisable()
-		{
-			Selection.selectionChanged -= UpdateUI;
-		}
-
 		public void CreateGUI()
 		{
-			_hasUI = true;
-
 			// Toolbar
 			var toolbar = new Toolbar { style = { flexShrink = 0 } };
 
@@ -177,7 +163,7 @@ namespace Beneton.ECS.Core.Editor
 			}
 
 			var entity = new Entity(entityId);
-			if (_ecsDebugRef.World.TryGetGameObject(entity, out var go))
+			if (_ecsInspectorsHelper.World.TryGetGameObject(entity, out var go))
 			{
 				Selection.activeGameObject = go;
 				EditorGUIUtility.PingObject(go);
@@ -186,17 +172,16 @@ namespace Beneton.ECS.Core.Editor
 
 		private void UpdateUI()
 		{
-			if (!_hasUI)
-			{
-				return;
-			}
-
 			if (!Application.isPlaying)
 			{
-				_statusLabel.text = "Only works in play mode";
-				_statusLabel.style.display = DisplayStyle.Flex;
-				_scrollView.Clear();
-				_ecsDebugRef = null;
+				if (_statusLabel != null)
+				{
+					_statusLabel.text = "Only works in play mode";
+					_statusLabel.style.display = DisplayStyle.Flex;
+				}
+
+				_scrollView?.Clear();
+				_ecsInspectorsHelper = null;
 				_lastSelectedGo = null;
 				_componentCache.Clear();
 				return;
@@ -209,24 +194,28 @@ namespace Beneton.ECS.Core.Editor
 
 			if (Selection.activeGameObject == null)
 			{
-				_statusLabel.text = "Select a Game Object in Hierarchy";
-				_statusLabel.style.display = DisplayStyle.Flex;
-				_scrollView.Clear();
+				if (_statusLabel != null)
+				{
+					_statusLabel.text = "Select a Game Object in Hierarchy";
+					_statusLabel.style.display = DisplayStyle.Flex;
+				}
+
+				_scrollView?.Clear();
 				_lastSelectedGo = null;
 				_componentCache.Clear();
 				return;
 			}
 
-			_ecsDebugRef ??= FindAnyObjectByType<EcsDebugRef>();
-			if (_ecsDebugRef == null)
+			_ecsInspectorsHelper ??= FindAnyObjectByType<EcsInspectorsHelper>();
+			if (_ecsInspectorsHelper == null)
 			{
 				_statusLabel.text = "Waiting for ECS initialization...";
 				_statusLabel.style.display = DisplayStyle.Flex;
 				return;
 			}
 
-			var world = _ecsDebugRef.World;
-			var componentManager = _ecsDebugRef.ComponentManager;
+			var world = _ecsInspectorsHelper.World;
+			var componentManager = _ecsInspectorsHelper.ComponentManager;
 			var selectedGo = Selection.activeGameObject;
 
 			if (!world.TryGetEntity(selectedGo, out var entity))

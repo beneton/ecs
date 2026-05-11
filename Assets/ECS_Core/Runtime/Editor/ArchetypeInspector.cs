@@ -17,9 +17,9 @@ namespace Beneton.ECS.Core.Editor
 	/// </summary>
 	public class ArchetypeInspector : EditorWindow
 	{
-		public const string WindowName = "Archetype Inspector";
+		private const string WindowName = "Archetype Inspector";
 
-		private EcsDebugRef _ecsDebugRef;
+		private EcsInspectorsHelper _ecsInspectorsHelper;
 		private bool _isActive = true;
 		private string _searchFilter = string.Empty;
 
@@ -41,8 +41,8 @@ namespace Beneton.ECS.Core.Editor
 			public VisualElement RequiredContainer;
 			public VisualElement ExcludedContainer;
 			public VisualElement EntityList;
-			public List<Button> EntityButtons = new();
-			public List<Entity> Entities = new();
+			public readonly List<Button> EntityButtons = new();
+			public readonly List<Entity> Entities = new();
 		}
 
 		[MenuItem(DebugUtils.MenuItemPath + WindowName)]
@@ -152,7 +152,7 @@ namespace Beneton.ECS.Core.Editor
 				_scrollView.style.display = DisplayStyle.None;
 				_statusLabel.style.display = DisplayStyle.Flex;
 				_statusLabel.text = "Only works in play mode";
-				_ecsDebugRef = null;
+				_ecsInspectorsHelper = null;
 				return;
 			}
 			else
@@ -166,8 +166,8 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			_ecsDebugRef ??= FindAnyObjectByType<EcsDebugRef>();
-			if (_ecsDebugRef == null)
+			_ecsInspectorsHelper ??= FindAnyObjectByType<EcsInspectorsHelper>();
+			if (_ecsInspectorsHelper == null)
 			{
 				_statusLabel.text = "Waiting for ECS initialization...";
 				_statusLabel.style.display = DisplayStyle.Flex;
@@ -176,8 +176,8 @@ namespace Beneton.ECS.Core.Editor
 
 			_componentNames ??= DebugUtils.BuildComponentSparseSet();
 
-			var componentManager = _ecsDebugRef.ComponentManager;
-			var world = _ecsDebugRef.World;
+			var componentManager = _ecsInspectorsHelper.ComponentManager;
+			var world = _ecsInspectorsHelper.World;
 			var allArchetypes = componentManager.GetAllArchetypes();
 
 			if (allArchetypes.Length == 0)

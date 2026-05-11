@@ -13,7 +13,7 @@ namespace Beneton.ECS.Core.Editor
 	public static class DebugUtils
 	{
 		public const string MenuItemPath = "Window/Ecs_Core/";
-		
+
 		private static SparseSet<string> _cachedComponentNames;
 
 		public static SparseSet<string> BuildComponentSparseSet()

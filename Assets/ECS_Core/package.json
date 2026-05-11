@@ -1,0 +1,17 @@
+{
+  "name": "beneton.ecs.core",
+  "displayName": "Ecs Core",
+  "version": "1.0.0",
+  "unity": "6000.4",
+  "description": "An easy to learn and use ECS framework optimized for Single Threaded applications and code maintainability",
+  "dependencies": {
+  },
+  "keywords": [
+    "ecs"
+  ],
+  "documentationUrl": "https://github.com/beneton/ecs",
+  "repository": {
+    "url": "https://github.com/beneton/ecs.git",
+    "type": "git"
+  }
+}
