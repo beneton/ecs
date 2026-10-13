@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Beneton.ECS.Core.Editor;
 using UnityEngine;
@@ -102,15 +103,6 @@ namespace Beneton.ECS.Core
 			return system;
 		}
 
-		public void Bake(Baker baker)
-		{
-			var entity = GetOrCreateEntity(baker.gameObject);
-
-			_timelineHandler.SetExecutingBaker(baker);
-			baker.Bake(entity, _componentManager, this);
-			_timelineHandler.SetExecutingBaker(null);
-		}
-
 		public Entity CreateEntity(string entityName)
 		{
 			if (Application.isEditor)
@@ -178,35 +170,85 @@ namespace Beneton.ECS.Core
 			return exists;
 		}
 
-		public (Entity Entity, GameObject GameObject) Spawn(
+		/// <summary>
+		/// Instantiates a prefab and turns it into entities using the same rules as <see cref="Start"/>:
+		/// every GameObject in the instance that has a <see cref="Baker"/> or an <see cref="ISystemNode"/>
+		/// becomes its own entity, its Bakers bake onto that entity and its nodes register against it.
+		/// - <see cref="SpawnResult.Entity"/> is <see cref="Entity.Null"/> when the root GameObject is not an entity.
+		/// - Destroying the root entity does not destroy the child entities; the caller is responsible for them.
+		/// </summary>
+		public SpawnResult Spawn(
 			GameObject spawnerPrefab,
 			Transform parent)
 		{
 			// Create new Instance
 			var instance = Object.Instantiate(spawnerPrefab, parent);
 			instance.name = instance.name[..^"(Clone)".Length];
-			var entity = GetOrCreateEntity(instance);
 
-			// Run Bakers on the instance
-			var bakers = instance.GetComponentsInChildren<Baker>(false);
+			var includeInactive = _inactiveObjectsPolicy == FindObjectsInactive.Include;
+			var rootEntity = Entity.Null;
+			List<(Entity Entity, GameObject GameObject)> children = null;
+			var hasBakers = false;
+
+			foreach (var transform in instance.GetComponentsInChildren<Transform>(includeInactive))
+			{
+				var gameObject = transform.gameObject;
+				var entity = BakeAndRegisterNodes(gameObject, ref hasBakers);
+
+				if (entity.IsNull)
+				{
+					continue;
+				}
+
+				if (gameObject == instance)
+				{
+					rootEntity = entity;
+				}
+				else
+				{
+					children ??= new List<(Entity Entity, GameObject GameObject)>();
+					children.Add((entity, gameObject));
+				}
+			}
+
+			if (hasBakers)
+			{
+				_componentManager.UpdateArchetypes();
+			}
+
+			return new SpawnResult(rootEntity, instance, children);
+		}
+
+		/// <summary>
+		/// Turns a GameObject into an entity if it has any <see cref="Baker"/> or <see cref="ISystemNode"/>:
+		/// runs its Bakers on that entity and registers its nodes against it.
+		/// Shared by <see cref="Start"/> and <see cref="Spawn"/> so both follow the same rules.
+		/// </summary>
+		/// <returns>The entity, or <see cref="Entity.Null"/> if the GameObject has neither.</returns>
+		private Entity BakeAndRegisterNodes(GameObject gameObject, ref bool hasBakers)
+		{
+			var bakers = gameObject.GetComponents<Baker>();
+			var nodes = gameObject.GetComponents<ISystemNode>();
+
+			if (bakers.Length == 0 && nodes.Length == 0)
+			{
+				return Entity.Null;
+			}
+
+			var entity = GetOrCreateEntity(gameObject);
+
 			foreach (var baker in bakers)
 			{
 				_timelineHandler.SetExecutingBaker(baker);
 				baker.Bake(entity, _componentManager, this);
 			}
 
-			if (bakers.Length > 0)
-			{
-				_componentManager.UpdateArchetypes();
-			}
-
 			_timelineHandler.SetExecutingBaker(null);
+			hasBakers |= bakers.Length > 0;
 
-			// Register any SystemNode present on the Instance
-			var allNodes = instance.GetComponentsInChildren<ISystemNode>();
-			RegisterSystemNodes(allNodes, entity);
+			RegisterSystemNodes(nodes, entity);
 
-			return (entity, instance);
+			return entity;
 		}
 
 		public ReadOnlySpan<Entity> GetEntities()
@@ -283,27 +325,15 @@ namespace Beneton.ECS.Core
 		public void Start()
 		{
 			_timelineHandler.SetExecutingSystem("World Start");
-			// Find all existing Bakers and Bake them
-			var allBakers = Object.FindObjectsByType<Baker>(_inactiveObjectsPolicy);
 
-			foreach (var baker in allBakers)
-			{
-				Bake(baker);
-			}
-
-			// Find all SystemNodes and Register them
-			var allTransforms = Object.FindObjectsByType<Transform>(_inactiveObjectsPolicy)
-				.ToArray();
+			// Every GameObject with a Baker or a SystemNode becomes an entity:
+			// its Bakers bake onto it and its SystemNodes register against it
+			var hasBakers = false;
+			var allTransforms = Object.FindObjectsByType<Transform>(_inactiveObjectsPolicy);
 
 			foreach (var transform in allTransforms)
 			{
-				var gameObject = transform.gameObject;
-				var allNodes = gameObject.GetComponents<ISystemNode>();
-				if (allNodes.Length > 0)
-				{
-					var entity = GetOrCreateEntity(gameObject);
-					RegisterSystemNodes(allNodes, entity);
-				}
+				BakeAndRegisterNodes(transform.gameObject, ref hasBakers);
 			}
 
 			_componentManager.UpdateArchetypes();

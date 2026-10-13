@@ -16,6 +16,6 @@ namespace Beneton.ECS.Core
 		bool HasEntity(Entity entity);
 		bool TryGetGameObject(Entity entity, out GameObject gameObject);
 		ReadOnlySpan<Entity> GetEntities();
-		(Entity Entity, GameObject GameObject) Spawn(GameObject spawnerPrefab, Transform parent);
+		SpawnResult Spawn(GameObject spawnerPrefab, Transform parent);
 	}
 }
