@@ -66,6 +66,12 @@ namespace Beneton.ECS.Core.CodeGen
 				var path = Path.Combine(OutputFolder, OutputFileName);
 				var code = BuildFile(components);
 
+				// Only touch the file when the ids changed, to avoid needless re-imports
+				if (File.Exists(path) && File.ReadAllText(path) == code)
+				{
+					return;
+				}
+
 				File.WriteAllText(path, code, Encoding.UTF8);
 				AssetDatabase.Refresh();
 			}
@@ -146,20 +152,32 @@ namespace Beneton.ECS.Core.CodeGen
 		private static readonly Regex NamespaceRegex =
 			new(@"\bnamespace\s+([A-Za-z0-9_.]+)", RegexOptions.Compiled);
 
+		// using Some.Namespace;  (also "global using", but not "using static")
 		private static readonly Regex UsingRegex =
-			new(@"using\s+([A-Za-z0-9_.]+)\s*;", RegexOptions.Compiled);
+			new(
+				@"^\s*(?:global\s+)?using\s+(?!static\b)([A-Za-z_][A-Za-z0-9_.]*)\s*;",
+				RegexOptions.Compiled | RegexOptions.Multiline);
+
+		// using Alias = Some.Namespace;
+		private static readonly Regex UsingAliasRegex =
+			new(
+				@"^\s*(?:global\s+)?using\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:global::)?([A-Za-z_][A-Za-z0-9_.]*)\s*;",
+				RegexOptions.Compiled | RegexOptions.Multiline);
 
 		private static readonly Regex StructRegex =
 			new(
 				@"\bstruct\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?<bases>[^{]+)",
 				RegexOptions.Compiled);
 
+		// Start of a generic constraint clause, which is not part of the base list
+		private static readonly Regex WhereRegex =
+			new(@"\bwhere\b", RegexOptions.Compiled);
+
 		public static IReadOnlyList<ComponentDeclaration> FindComponents(string rootFolder)
 		{
 			var result = new List<ComponentDeclaration>();
 
 			var files = Directory.GetFiles(rootFolder, "*.cs", SearchOption.AllDirectories);
-
 			foreach (var file in files)
 			{
 				if (file.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
@@ -167,27 +185,34 @@ namespace Beneton.ECS.Core.CodeGen
 					continue;
 				}
 
-				var text = File.ReadAllText(file);
+				// Comments are removed so commented-out code is never picked up
+				var text = StripComments(File.ReadAllText(file));
 
 				// Extract namespace
 				var nsMatch = NamespaceRegex.Match(text);
 				var ns = nsMatch.Success ? nsMatch.Groups[1].Value.Trim() : null;
 
-				// Extract using directives
+				// Extract using directives and aliases
 				var usings = UsingRegex.Matches(text)
 					.Select(m => m.Groups[1].Value.Trim())
 					.ToList();
+
+				var aliases = new Dictionary<string, string>();
+				foreach (Match m in UsingAliasRegex.Matches(text))
+				{
+					aliases[m.Groups[1].Value] = m.Groups[2].Value;
+				}
 
 				// Check structs
 				var structMatches = StructRegex.Matches(text);
 				foreach (Match m in structMatches)
 				{
 					var name = m.Groups[1].Value.Trim();
-					var bases = m.Groups["bases"].Value.Trim();
+					var bases = SplitBaseList(m.Groups["bases"].Value);
 
 					foreach (var componentType in ComponentIdGenerator.ComponentTypes)
 					{
-						if (ImplementsTargetInterface(bases, usings, componentType))
+						if (ImplementsTargetInterface(bases, ns, usings, aliases, componentType))
 						{
 							result.Add(
 								new ComponentDeclaration
@@ -204,40 +229,46 @@ namespace Beneton.ECS.Core.CodeGen
 			return result;
 		}
 
+		/// <summary>
+		/// Compares each base type as a whole name, so e.g. "IComponentGetter" never matches "IComponent".
+		/// </summary>
 		private static bool ImplementsTargetInterface(
-			string bases,
+			List<string> bases,
+			string ns,
 			List<string> usings,
+			Dictionary<string, string> aliases,
 			string componentType)
 		{
-			// Case 1: Fully-qualified
-			if (bases.Contains(
-				$"{ComponentIdGenerator.CoreNamespace}/{componentType}"))
-			{
-				return true;
-			}
+			var coreNamespace = ComponentIdGenerator.CoreNamespace;
 
-			// Case 2: Short name when correct using exists
-			// Example "IComponent"
-			if (bases.Contains(componentType))
+			// The short name resolves with "using Beneton.ECS.Core;" or when declared inside that namespace
+			var shortNameResolves =
+				usings.Contains(coreNamespace) ||
+				ns == coreNamespace ||
+				(ns != null && ns.StartsWith(coreNamespace + ".", StringComparison.Ordinal));
+
+			foreach (var baseType in bases)
 			{
-				if (usings.Contains(ComponentIdGenerator.CoreNamespace))
+				// Case 1: Fully-qualified
+				// Example: "Beneton.ECS.Core.IComponent"
+				if (baseType == $"{coreNamespace}.{componentType}")
 				{
 					return true;
 				}
-			}
 
-			// Case 3: Aliased namespace
-			// Example: using Core = Beneton.ECS.Core;
-			foreach (var u in usings)
-			{
-				if (u.Contains("="))
+				// Case 2: Short name when correct using exists
+				// Example "IComponent"
+				if (baseType == componentType && shortNameResolves)
 				{
-					var parts = u.Split('=');
-					var alias = parts[0].Trim();
-					var full = parts[1].Trim();
+					return true;
+				}
 
-					if (full == ComponentIdGenerator.CoreNamespace &&
-						bases.Contains(alias + $".{componentType}"))
+				// Case 3: Aliased namespace
+				// Example: using Core = Beneton.ECS.Core; ... : Core.IComponent
+				foreach (var alias in aliases)
+				{
+					if (alias.Value == coreNamespace &&
+						baseType == $"{alias.Key}.{componentType}")
 					{
 						return true;
 					}
@@ -245,6 +276,150 @@ namespace Beneton.ECS.Core.CodeGen
 			}
 
 			return false;
+		}
+
+		/// <summary>
+		/// Splits "IComponent, IEquatable&lt;A, B&gt; where T : struct" into its base types,
+		/// ignoring commas inside generic arguments and dropping any constraint clause.
+		/// </summary>
+		private static List<string> SplitBaseList(string bases)
+		{
+			var whereMatch = WhereRegex.Match(bases);
+			if (whereMatch.Success)
+			{
+				bases = bases.Substring(0, whereMatch.Index);
+			}
+
+			var result = new List<string>();
+			var depth = 0;
+			var start = 0;
+
+			for (var i = 0; i <= bases.Length; i++)
+			{
+				var atEnd = i == bases.Length;
+				var c = atEnd ? ',' : bases[i];
+
+				if (c == '<')
+				{
+					depth++;
+				}
+				else if (c == '>')
+				{
+					depth--;
+				}
+				else if (c == ',' && depth == 0)
+				{
+					var baseType = Regex.Replace(bases.Substring(start, i - start), @"\s+", "");
+					if (baseType.StartsWith("global::", StringComparison.Ordinal))
+					{
+						baseType = baseType.Substring("global::".Length);
+					}
+
+					if (baseType.Length > 0)
+					{
+						result.Add(baseType);
+					}
+
+					start = i + 1;
+				}
+			}
+
+			return result;
+		}
+
+		/// <summary>
+		/// Removes // and /* */ comments, leaving string and char literals untouched.
+		/// </summary>
+		private static string StripComments(string text)
+		{
+			var sb = new StringBuilder(text.Length);
+			var i = 0;
+
+			while (i < text.Length)
+			{
+				var c = text[i];
+				var next = i + 1 < text.Length ? text[i + 1] : '\0';
+
+				if (c == '/' && next == '/')
+				{
+					// Line comment: skip to end of line, keep the line break
+					while (i < text.Length && text[i] != '\n')
+					{
+						i++;
+					}
+				}
+				else if (c == '/' && next == '*')
+				{
+					// Block comment: skip to */, keep line breaks
+					i += 2;
+					while (i < text.Length && !(text[i] == '*' && i + 1 < text.Length && text[i + 1] == '/'))
+					{
+						if (text[i] == '\n')
+						{
+							sb.Append('\n');
+						}
+
+						i++;
+					}
+
+					i += 2;
+				}
+				else if (c == '@' && next == '"')
+				{
+					// Verbatim string: "" is an escaped quote
+					sb.Append(c).Append(next);
+					i += 2;
+					while (i < text.Length)
+					{
+						sb.Append(text[i]);
+						if (text[i] == '"')
+						{
+							if (i + 1 < text.Length && text[i + 1] == '"')
+							{
+								sb.Append('"');
+								i += 2;
+								continue;
+							}
+
+							i++;
+							break;
+						}
+
+						i++;
+					}
+				}
+				else if (c == '"' || c == '\'')
+				{
+					// Regular string or char literal: \ escapes the next character
+					var quote = c;
+					sb.Append(c);
+					i++;
+					while (i < text.Length && text[i] != quote && text[i] != '\n')
+					{
+						if (text[i] == '\\' && i + 1 < text.Length)
+						{
+							sb.Append(text[i]);
+							i++;
+						}
+
+						sb.Append(text[i]);
+						i++;
+					}
+
+					if (i < text.Length && text[i] == quote)
+					{
+						sb.Append(quote);
+						i++;
+					}
+				}
+				else
+				{
+					sb.Append(c);
+					i++;
+				}
+			}
+
+			return sb.ToString();
 		}
 	}
 }
