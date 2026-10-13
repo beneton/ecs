@@ -219,6 +219,18 @@ namespace Beneton.ECS.Core
 
 			foreach (var pair in _systems.Values)
 			{
+				UnregisterNodeIfNeeded(pair);
+			}
+
+			foreach (var pair in _lateSystems.Values)
+			{
+				UnregisterNodeIfNeeded(pair);
+			}
+
+			return;
+
+			void UnregisterNodeIfNeeded(SystemCommandBufferPair pair)
+			{
 				if (pair.System is IDistributedSystem distSystem)
 				{
 					distSystem.UnregisterNode(entity);
@@ -232,11 +244,23 @@ namespace Beneton.ECS.Core
 			{
 				foreach (var pair in _systems.Values)
 				{
-					if (pair.System is IDistributedSystem distSystem &&
-						distSystem.SystemType == node.SystemType)
-					{
-						distSystem.RegisterNode(node, entity);
-					}
+					RegisterNodeIfFound(pair, node);
+				}
+
+				foreach (var pair in _lateSystems.Values)
+				{
+					RegisterNodeIfFound(pair, node);
+				}
+			}
+
+			return;
+
+			void RegisterNodeIfFound(SystemCommandBufferPair pair, ISystemNode node)
+			{
+				if (pair.System is IDistributedSystem distSystem &&
+					distSystem.SystemType == node.SystemType)
+				{
+					distSystem.RegisterNode(node, entity);
 				}
 			}
 		}
