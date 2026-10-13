@@ -36,13 +36,13 @@ namespace Beneton.ECS.Core
 
 		public void UnregisterNode(Entity entity)
 		{
-			foreach (var nodeId in NodePairs.Keys)
+			for (var i = NodePairs.Keys.Length - 1; i >= 0; i--)
 			{
+				var nodeId = NodePairs.Keys[i];
 				var pair = NodePairs.Get(nodeId);
 				if (pair.Entity == entity)
 				{
 					NodePairs.Remove(nodeId);
-					return;
 				}
 			}
 		}
