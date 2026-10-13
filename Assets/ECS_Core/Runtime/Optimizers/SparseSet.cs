@@ -88,6 +88,9 @@ namespace Beneton.ECS.Core
 			_values[index] = _values[last];
 			_sparse[lastElement] = index;
 
+			// Clear the vacated slot so references (GameObjects, nodes, commands) can be collected
+			_values[last] = default;
+
 			_count--;
 		}
 
