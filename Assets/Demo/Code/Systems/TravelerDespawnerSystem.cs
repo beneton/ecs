@@ -30,7 +30,7 @@ namespace ECSSample.Systems
 					Object.Destroy(gameObject);
 				}
 
-				world.DestroyEntity(entity);
+				commandBuffer.DestroyEntity(entity);
 			}
 		}
 	}

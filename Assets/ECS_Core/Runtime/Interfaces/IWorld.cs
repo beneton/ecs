@@ -15,7 +15,6 @@ namespace Beneton.ECS.Core
 		bool TryGetEntity(GameObject gameObject, out Entity entity);
 		bool HasEntity(Entity entity);
 		bool TryGetGameObject(Entity entity, out GameObject gameObject);
-		void DestroyEntity(Entity entity);
 		ReadOnlySpan<Entity> GetEntities();
 		(Entity Entity, GameObject GameObject) Spawn(GameObject spawnerPrefab, Transform parent);
 	}

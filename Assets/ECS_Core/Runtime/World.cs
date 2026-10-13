@@ -214,8 +214,18 @@ namespace Beneton.ECS.Core
 			return _entities.Values;
 		}
 
+		/// <summary>
+		/// Destroys the entity immediately. Systems and system nodes must use
+		/// <see cref="ICommandBuffer.DestroyEntity"/> instead, so entities are never
+		/// removed from an archetype while it is being iterated.
+		/// </summary>
 		public void DestroyEntity(Entity entity)
 		{
+			if (!HasEntity(entity))
+			{
+				return;
+			}
+
 			_timelineHandler.RegisterEntityDestruction(entity, this);
 
 			_entities.Remove(entity);
@@ -305,7 +315,7 @@ namespace Beneton.ECS.Core
 			{
 				_timelineHandler.SetExecutingSystem(pair.System);
 				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
-				pair.CommandBuffer.Execute(_componentManager);
+				pair.CommandBuffer.Execute(this, _componentManager);
 			}
 		}
 
@@ -315,7 +325,7 @@ namespace Beneton.ECS.Core
 			{
 				_timelineHandler.SetExecutingSystem(pair.System);
 				pair.System.Update(deltaTime, _componentManager, pair.CommandBuffer, this);
-				pair.CommandBuffer.Execute(_componentManager);
+				pair.CommandBuffer.Execute(this, _componentManager);
 			}
 		}
 

@@ -52,11 +52,19 @@ namespace Beneton.ECS.Core
 			_shouldUpdateArchetypes = true;
 		}
 
-		public void Execute(ComponentManager componentManager)
+		public void DestroyEntity(Entity entity)
+		{
+			var command = DestroyEntityCommand.Get(entity);
+			_commands.Set(_commandId++, command);
+			_commandId++;
+			_shouldUpdateArchetypes = true;
+		}
+
+		public void Execute(World world, ComponentManager componentManager)
 		{
 			foreach (var command in _commands.Values)
 			{
-				command.Execute(componentManager);
+				command.Execute(world, componentManager);
 			}
 
 			_commands.Clear();

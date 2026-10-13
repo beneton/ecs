@@ -16,7 +16,7 @@
 			return newCommand;
 		}
 
-		public void Execute(ComponentManager componentManager)
+		public void Execute(World world, ComponentManager componentManager)
 		{
 			componentManager.UpdateComponent(_entity, _component);
 

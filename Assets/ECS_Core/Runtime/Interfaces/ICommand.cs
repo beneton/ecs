@@ -10,7 +10,8 @@
 		/// <summary>
 		/// Executes the specific ECS operation using the provided <see cref="ComponentManager"/>.
 		/// </summary>
+		/// <param name="world">The World</param>
 		/// <param name="componentManager">The manager used to apply structural changes.</param>
-		void Execute(ComponentManager componentManager);
+		void Execute(World world, ComponentManager componentManager);
 	}
 }

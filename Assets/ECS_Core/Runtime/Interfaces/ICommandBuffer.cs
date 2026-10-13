@@ -13,6 +13,7 @@
 		void AddOrUpdateComponent<T>(Entity entity, T component) where T : struct, IComponent;
 		void AddMissingComponent<T>(Entity entity, T component) where T : struct, IComponent;
 		void RemoveComponent<T>(Entity entity) where T : struct, IComponent;
-		void Execute(ComponentManager componentManager);
+		void DestroyEntity(Entity entity);
+		void Execute(World world, ComponentManager componentManager);
 	}
 }
