@@ -195,6 +195,11 @@ namespace Beneton.ECS.Core
 				baker.Bake(entity, _componentManager, this);
 			}
 
+			if (bakers.Length > 0)
+			{
+				_componentManager.UpdateArchetypes();
+			}
+
 			_timelineHandler.SetExecutingBaker(null);
 
 			// Register any SystemNode present on the Instance
