@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using UnityEngine.Assemblies;
 
 namespace Beneton.ECS.Core.Editor
 {
@@ -22,9 +23,8 @@ namespace Beneton.ECS.Core.Editor
 			{
 				return _cachedComponentNames;
 			}
-
-			var componentsData = AppDomain.CurrentDomain
-				.GetAssemblies()
+			
+			var componentsData = CurrentAssemblies.GetLoadedAssemblies()
 				.Where(a => !a.IsDynamic) // skip dynamic assemblies
 				.SelectMany(a =>
 				{

@@ -277,8 +277,8 @@ namespace Beneton.ECS.Core.Editor
 
 			foreach (var c in components.Required)
 			{
-				var name = _componentNames.Has(c) ? _componentNames.Get(c) : $"Unknown ({c})";
-				ui.RequiredContainer.Add(CreateComponentPill(name, true));
+				var compName = _componentNames.Has(c) ? _componentNames.Get(c) : $"Unknown ({c})";
+				ui.RequiredContainer.Add(CreateComponentPill(compName, true));
 			}
 
 			// Excluded Components
@@ -304,8 +304,8 @@ namespace Beneton.ECS.Core.Editor
 
 			foreach (var c in components.Excluded)
 			{
-				var name = _componentNames.Has(c) ? _componentNames.Get(c) : $"Unknown ({c})";
-				ui.ExcludedContainer.Add(CreateComponentPill(name, false));
+				var compName = _componentNames.Has(c) ? _componentNames.Get(c) : $"Unknown ({c})";
+				ui.ExcludedContainer.Add(CreateComponentPill(compName, false));
 			}
 
 			ui.Root.Add(ui.Foldout);

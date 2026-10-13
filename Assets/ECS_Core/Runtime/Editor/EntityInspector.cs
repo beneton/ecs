@@ -38,6 +38,7 @@ namespace Beneton.ECS.Core.Editor
 		private class ComponentWrapper : ScriptableObject
 		{
 			[SerializeReference]
+			// ReSharper disable once InconsistentNaming
 			public IComponent Component;
 		}
 
@@ -342,12 +343,12 @@ namespace Beneton.ECS.Core.Editor
 					// Ensure that the PropertyField is expanded to show its children
 					// Since it's a [SerializeReference] IComponent, it might be collapsed by default
 					propField.RegisterCallback<AttachToPanelEvent, PropertyField>(
-						(ev, propertyField) =>
+						(_, propertyField) =>
 						{
-							var toggle = propertyField.Q<Toggle>();
-							if (toggle != null)
+							var propToggle = propertyField.Q<Toggle>();
+							if (propToggle != null)
 							{
-								toggle.value = true;
+								propToggle.value = true;
 							}
 						},
 						propField);
