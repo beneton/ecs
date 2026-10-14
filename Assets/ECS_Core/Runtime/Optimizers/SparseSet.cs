@@ -115,7 +115,7 @@ namespace Beneton.ECS.Core
 				return;
 			}
 
-			var newSize = _sparse.Length;
+			var newSize = _sparse.Length == 0 ? 1 : _sparse.Length;
 			while (newSize < needed)
 			{
 				newSize *= 2;
