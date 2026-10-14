@@ -17,7 +17,6 @@ namespace Beneton.ECS.Core
 		{
 			var command = AddComponentCommand<T>.Get(entity, component);
 			_commands.Set(_commandId++, command);
-			_commandId++;
 			_shouldUpdateArchetypes = true;
 		}
 
@@ -25,14 +24,12 @@ namespace Beneton.ECS.Core
 		{
 			var command = UpdateComponentCommand<T>.Get(entity, component);
 			_commands.Set(_commandId++, command);
-			_commandId++;
 		}
 
 		public void AddOrUpdateComponent<T>(Entity entity, T component) where T : struct, IComponent
 		{
 			var command = AddOrUpdateComponentCommand<T>.Get(entity, component);
 			_commands.Set(_commandId++, command);
-			_commandId++;
 			_shouldUpdateArchetypes = true;
 		}
 
@@ -40,7 +37,6 @@ namespace Beneton.ECS.Core
 		{
 			var command = AddMissingComponentCommand<T>.Get(entity, component);
 			_commands.Set(_commandId++, command);
-			_commandId++;
 			_shouldUpdateArchetypes = true;
 		}
 
@@ -48,7 +44,6 @@ namespace Beneton.ECS.Core
 		{
 			var command = RemoveComponentCommand<T>.Get(entity);
 			_commands.Set(_commandId++, command);
-			_commandId++;
 			_shouldUpdateArchetypes = true;
 		}
 
@@ -56,7 +51,6 @@ namespace Beneton.ECS.Core
 		{
 			var command = DestroyEntityCommand.Get(entity);
 			_commands.Set(_commandId++, command);
-			_commandId++;
 			_shouldUpdateArchetypes = true;
 		}
 

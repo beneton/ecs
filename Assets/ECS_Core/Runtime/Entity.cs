@@ -24,7 +24,8 @@ namespace Beneton.ECS.Core
 		public int Version => _version;
 
 		internal const int NullId = 0;
-		public static readonly Entity Null = new(NullId, 0);
+		internal const int NullVersion = 0;
+		public static readonly Entity Null = new(NullId, NullVersion);
 
 		public bool IsNull => _id == NullId;
 		public bool IsNotNull => _id != NullId;

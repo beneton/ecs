@@ -29,6 +29,8 @@ namespace Beneton.ECS.Core
 		private readonly SparseSet<GameObject> _entityGameObjectLookup = new();
 
 		private int _nextEntityId = Entity.NullId + 1;
+		private int _entityStartingVersion = Entity.NullVersion + 1;
+			
 
 		// Destroyed entities, already carrying the Version their slot will have when reused
 		private readonly Stack<Entity> _freeEntities = new();
@@ -143,7 +145,7 @@ namespace Beneton.ECS.Core
 			// Reuse a destroyed entity's slot when possible, otherwise take a new one
 			var entity = _freeEntities.Count > 0
 				? _freeEntities.Pop()
-				: new Entity(_nextEntityId++, 1);
+				: new Entity(_nextEntityId++, _entityStartingVersion);
 
 			_entities.Set(entity, entity);
 			return entity;
