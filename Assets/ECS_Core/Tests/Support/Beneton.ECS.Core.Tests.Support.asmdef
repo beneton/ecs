@@ -1,0 +1,18 @@
+{
+    "name": "Beneton.ECS.Core.Tests.Support",
+    "rootNamespace": "Beneton.ECS.Core.Tests",
+    "references": [
+        "Beneton.ECS.Core.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
