@@ -65,9 +65,9 @@ namespace Beneton.ECS.Core
 		{
 			if (TryGetTypedStorage<T>(out var typedStorage))
 			{
-				if (typedStorage.Length > 0)
+				if (typedStorage.Length > 0 &&
+					_world.TryGetEntityById(typedStorage.Keys[0], out entity))
 				{
-					entity = new Entity(typedStorage.Keys[0]);
 					component = typedStorage.Get(entity);
 					return true;
 				}
@@ -326,6 +326,23 @@ namespace Beneton.ECS.Core
 
 		private void UpdateArchetypes(Entity entity)
 		{
+			// A destroyed entity leaves every archetype. Only remove it if its slot still holds
+			// this exact entity, so a newer entity reusing the slot is left untouched.
+			if (!_world.HasEntity(entity))
+			{
+				foreach (var archetype in _archetypes.Values)
+				{
+					var entitiesInArchetype = _entitiesInArchetype.Get(archetype.Id);
+					var current = entitiesInArchetype.TryGet(entity, out var exists);
+					if (exists && current == entity)
+					{
+						entitiesInArchetype.Remove(entity);
+					}
+				}
+
+				return;
+			}
+
 			foreach (var archetype in _archetypes.Values)
 			{
 				if (archetype.Matches(entity, this))

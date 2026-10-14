@@ -14,6 +14,7 @@ namespace Beneton.ECS.Core.Editor
 	public struct TimelineEvent
 	{
 		public int EntityId;
+		public int EntityVersion;
 		public string EntityName;
 		public string ComponentName;
 		public string CallerName;

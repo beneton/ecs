@@ -520,7 +520,7 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			var entity = new Entity(selectedEvent.EntityId);
+			var entity = new Entity(selectedEvent.EntityId, selectedEvent.EntityVersion);
 			if (world.TryGetGameObject(entity, out var gameObject))
 			{
 				Selection.activeGameObject = gameObject;
@@ -679,7 +679,7 @@ namespace Beneton.ECS.Core.Editor
 						continue;
 					}
 
-					if (ev.EntityId.ToString() == trimmed)
+					if (MatchesEntityFilter(ev, trimmed))
 					{
 						match = true;
 						break;
@@ -703,7 +703,7 @@ namespace Beneton.ECS.Core.Editor
 						continue;
 					}
 
-					if (ev.EntityId.ToString() == trimmed)
+					if (MatchesEntityFilter(ev, trimmed))
 					{
 						return false;
 					}
@@ -845,6 +845,7 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
+					EntityVersion = entity.Version,
 					EntityName = ComposeEntityName(entity, world),
 					ComponentName = componentName,
 					CallerName = ComposeCallerString(),
@@ -865,6 +866,7 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
+					EntityVersion = entity.Version,
 					EntityName = ComposeEntityName(entity, world),
 					ComponentName = componentName,
 					CallerName = ComposeCallerString(),
@@ -885,6 +887,7 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
+					EntityVersion = entity.Version,
 					EntityName = ComposeEntityName(entity, world),
 					ComponentName = componentName,
 					CallerName = ComposeCallerString(),
@@ -904,6 +907,7 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
+					EntityVersion = entity.Version,
 					EntityName = ComposeEntityName(entity, world),
 					ComponentName = "All",
 					CallerName = ComposeCallerString(),
@@ -923,6 +927,7 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
+					EntityVersion = entity.Version,
 					EntityName = ComposeEntityName(entity, world),
 					ComponentName = string.Empty,
 					CallerName = ComposeCallerString(),
@@ -942,6 +947,7 @@ namespace Beneton.ECS.Core.Editor
 				new TimelineEvent
 				{
 					EntityId = entity.Id,
+					EntityVersion = entity.Version,
 					EntityName = ComposeEntityName(entity, world),
 					ComponentName = string.Empty,
 					CallerName = ComposeCallerString(),
@@ -988,6 +994,13 @@ namespace Beneton.ECS.Core.Editor
 			}
 
 			_currentExecutingSystem = system != null ? system.GetType().Name : string.Empty;
+		}
+
+		// "5" matches every entity that used slot 5, "5:2" matches only that exact entity
+		private static bool MatchesEntityFilter(TimelineEvent ev, string filter)
+		{
+			return ev.EntityId.ToString() == filter ||
+				$"{ev.EntityId.ToString()}:{ev.EntityVersion.ToString()}" == filter;
 		}
 
 		private static string ComposeEntityName(Entity entity, World world)

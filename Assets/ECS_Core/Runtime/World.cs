@@ -28,7 +28,10 @@ namespace Beneton.ECS.Core
 		private readonly SparseSet<Entity> _entities = new();
 		private readonly SparseSet<GameObject> _entityGameObjectLookup = new();
 
-		private int _entityId = Entity.NullId + 1;
+		private int _nextEntityId = Entity.NullId + 1;
+
+		// Destroyed entities, already carrying the Version their slot will have when reused
+		private readonly Stack<Entity> _freeEntities = new();
 		private int _systemId = 1;
 
 		private readonly ComponentManager _componentManager;
@@ -123,13 +126,13 @@ namespace Beneton.ECS.Core
 				var existingGo = _entityGameObjectLookup.Values[i];
 				if (existingGo == gameObject)
 				{
-					return new Entity(_entityGameObjectLookup.Keys[i]);
+					return _entities.Get(_entityGameObjectLookup.Keys[i]);
 				}
 			}
 
 			var entity = InternalCreateEntity();
 			_entityGameObjectLookup.Set(entity, gameObject);
-			gameObject.name += $" [{entity.Id.ToString()}]";
+			gameObject.name += $" [{entity.Id.ToString()}:{entity.Version.ToString()}]";
 
 			_timelineHandler.RegisterEntityCreation(entity, this);
 			return entity;
@@ -137,15 +140,32 @@ namespace Beneton.ECS.Core
 
 		private Entity InternalCreateEntity()
 		{
-			var entity = new Entity(_entityId);
+			// Reuse a destroyed entity's slot when possible, otherwise take a new one
+			var entity = _freeEntities.Count > 0
+				? _freeEntities.Pop()
+				: new Entity(_nextEntityId++, 1);
+
 			_entities.Set(entity, entity);
-			_entityId++;
 			return entity;
 		}
 
+		/// <summary>
+		/// True only if the entity is alive and the handle's <see cref="Entity.Version"/> matches its slot,
+		/// so handles to destroyed entities are rejected even after their slot is reused.
+		/// </summary>
 		public bool HasEntity(Entity entity)
 		{
-			return _entities.Has(entity);
+			var current = _entities.TryGet(entity, out var exists);
+			return exists && current.Version == entity.Version;
+		}
+
+		/// <summary>
+		/// Finds the alive entity occupying a slot. Used where only the slot <see cref="Entity.Id"/> is known.
+		/// </summary>
+		internal bool TryGetEntityById(int id, out Entity entity)
+		{
+			entity = _entities.TryGet(id, out var exists);
+			return exists;
 		}
 
 		public bool TryGetEntity(GameObject gameObject, out Entity entity)
@@ -155,7 +175,7 @@ namespace Beneton.ECS.Core
 				var existingGo = _entityGameObjectLookup.Values[i];
 				if (existingGo == gameObject)
 				{
-					entity = new Entity(_entityGameObjectLookup.Keys[i]);
+					entity = _entities.Get(_entityGameObjectLookup.Keys[i]);
 					return true;
 				}
 			}
@@ -166,6 +186,15 @@ namespace Beneton.ECS.Core
 
 		public bool TryGetGameObject(Entity entity, out GameObject gameObject)
 		{
+			// Reject handles whose slot now belongs to a newer entity.
+			// (Not HasEntity: during destruction the GameObject is still looked up for debug names.)
+			var current = _entities.TryGet(entity, out var alive);
+			if (alive && current.Version != entity.Version)
+			{
+				gameObject = null;
+				return false;
+			}
+
 			gameObject = _entityGameObjectLookup.TryGet(entity, out var exists);
 			return exists;
 		}
@@ -283,6 +312,9 @@ namespace Beneton.ECS.Core
 			{
 				UnregisterNodeIfNeeded(pair);
 			}
+
+			// Free the slot for reuse, with a new Version so this handle stays invalid
+			_freeEntities.Push(new Entity(entity.Id, entity.Version + 1));
 
 			return;
 

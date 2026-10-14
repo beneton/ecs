@@ -163,8 +163,9 @@ namespace Beneton.ECS.Core.Editor
 				return;
 			}
 
-			var entity = new Entity(entityId);
-			if (_ecsInspectorsHelper.World.TryGetGameObject(entity, out var go))
+			var world = _ecsInspectorsHelper.World;
+			if (world.TryGetEntityById(entityId, out var entity) &&
+				world.TryGetGameObject(entity, out var go))
 			{
 				Selection.activeGameObject = go;
 				EditorGUIUtility.PingObject(go);
@@ -287,7 +288,7 @@ namespace Beneton.ECS.Core.Editor
 				var timelineButton = new Button(() =>
 				{
 					var timeline = GetWindow<EcsTimeline>(EcsTimeline.WindowName);
-					timeline.SetEntityFilter(entity.Id.ToString());
+					timeline.SetEntityFilter($"{entity.Id.ToString()}:{entity.Version.ToString()}");
 					timeline.Focus();
 				})
 				{
